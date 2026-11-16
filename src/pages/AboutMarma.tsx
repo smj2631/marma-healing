@@ -106,6 +106,9 @@ export function AboutMarma() {
           Marma is a complementary wellness practice, not medical treatment. Scientific research on its benefits is still limited. Consult a doctor for any medical or eye condition.
         </p>
       </aside>
+      <p className="text-xs opacity-60">
+        Guidance voice generated with Piper text-to-speech using the LibriTTS voice model (CC BY 4.0, speaker 436).
+      </p>
     </article>
   );
 }

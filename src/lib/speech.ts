@@ -68,6 +68,60 @@ function currentVoice() {
   return (chosenURI && synth.getVoices().find((v) => v.voiceURI === chosenURI)) || auto;
 }
 
+// ---------- Recorded male voice (bundled clips, same on every phone, works offline) ----------
+import { splitSentences, voiceKey } from './voiceKey';
+
+const VOICE_BASE = import.meta.env.BASE_URL + 'voice/';
+let manifest: Record<string, string> | null = null;
+const clipUrls = new Map<string, string>();
+let clipEl: HTMLAudioElement | null = null;
+let loading = false;
+
+/** Recorded clips are used for the male voice; the female voice uses the device's own speech. */
+const useRecorded = () => gender === 'male' && !!manifest;
+
+/** Fetch the manifest and every clip into memory (blob URLs play offline on Safari too). */
+export function loadVoiceClips() {
+  if (loading || typeof window === 'undefined') return;
+  loading = true;
+  fetch(VOICE_BASE + 'manifest.json')
+    .then((r) => (r.ok ? r.json() : Promise.reject()))
+    .then(async (m: Record<string, string>) => {
+      manifest = m;
+      listeners.forEach((l) => l());
+      for (const [k, f] of Object.entries(m)) {
+        try {
+          const r = await fetch(VOICE_BASE + f);
+          if (r.ok) clipUrls.set(k, URL.createObjectURL(await r.blob()));
+        } catch {
+          /* fall back to the network URL */
+        }
+      }
+    })
+    .catch(() => {
+      loading = false;
+    });
+}
+loadVoiceClips();
+
+export const hasRecordedVoice = () => !!manifest;
+
+function clipFor(sentence: string) {
+  const k = voiceKey(sentence);
+  const f = manifest?.[k];
+  if (!f) return null;
+  return clipUrls.get(k) ?? VOICE_BASE + f;
+}
+
+function clipElement() {
+  if (!clipEl) {
+    clipEl = new Audio();
+    clipEl.preload = 'auto';
+    clipEl.setAttribute('playsinline', '');
+  }
+  return clipEl;
+}
+
 export interface SpeakOpts {
   rate?: number;
   /** Cancel anything currently queued (keeps counts in sync). */
@@ -84,6 +138,14 @@ const PAUSE_MS = 380;
 
 export function speak(text: string, { rate = 0.85, interrupt = true, onEnd, onSentence, split = true }: SpeakOpts = {}) {
   const my = ++token;
+  if (useRecorded() && text) {
+    if (interrupt) {
+      synth?.cancel();
+      clipEl?.pause();
+    }
+    speakRecorded(my, text, rate, split, onEnd, onSentence);
+    return;
+  }
   if (!synth || !text) {
     onSentence?.(text);
     onEnd?.();
@@ -91,7 +153,7 @@ export function speak(text: string, { rate = 0.85, interrupt = true, onEnd, onSe
   }
   if (interrupt) synth.cancel();
   // Speak sentence by sentence with a short breath in between: slower, calmer delivery.
-  const parts = !split ? [text] : text.match(/[^.!?]+[.!?]*/g)?.map((p) => p.trim()).filter(Boolean) ?? [text];
+  const parts = !split ? [text] : splitSentences(text);
   let i = 0;
   let finished = false;
   const done = () => {
@@ -130,13 +192,83 @@ export function speak(text: string, { rate = 0.85, interrupt = true, onEnd, onSe
   next();
 }
 
+function speakRecorded(my: number, text: string, rate: number, split: boolean, onEnd?: () => void, onSentence?: (s: string) => void) {
+  const parts = splitSentences(text);
+  const el = clipElement();
+  let i = 0;
+  let finished = false;
+  const done = () => {
+    if (finished) return;
+    finished = true;
+    if (my === token) onEnd?.();
+  };
+  const next = () => {
+    if (my !== token || i >= parts.length) return done();
+    const sentence = parts[i++];
+    if (split || i === 1) onSentence?.(split ? sentence : text);
+    let ended = false;
+    const after = () => {
+      if (ended) return;
+      ended = true;
+      if (my !== token) return done();
+      if (i < parts.length) setTimeout(next, split ? PAUSE_MS : 120);
+      else done();
+    };
+    const url = clipFor(sentence);
+    if (!url) {
+      // A line that was not recorded: use the device voice for it.
+      if (!synth) return after();
+      const u = new SpeechSynthesisUtterance(sentence);
+      const v = currentVoice();
+      if (v) {
+        u.voice = v;
+        u.lang = v.lang;
+      }
+      u.rate = rate;
+      u.pitch = 0.88;
+      u.onend = after;
+      u.onerror = after;
+      synth.speak(u);
+      return;
+    }
+    el.onended = after;
+    el.onerror = after;
+    el.muted = false;
+    el.src = url;
+    el.playbackRate = Math.min(1.5, Math.max(0.6, rate / 0.85));
+    el.play().catch(after);
+  };
+  next();
+}
+
 export function stopSpeech() {
   token++;
   synth?.cancel();
+  if (clipEl) {
+    clipEl.onended = null;
+    clipEl.onerror = null;
+    clipEl.pause();
+  }
 }
 
 /** Call from a user gesture so iOS allows later speech. */
 export function unlockSpeech(rate = 0.85) {
+  if (manifest) {
+    const el = clipElement();
+    const first = clipFor('Inhale.');
+    if (first && el.paused) {
+      el.muted = true;
+      el.src = first;
+      el.play()
+        .then(() => {
+          if (el.muted) {
+            el.pause();
+            el.muted = false;
+          }
+        })
+        .catch(() => (el.muted = false));
+    }
+  }
   if (!synth) return;
   const u = new SpeechSynthesisUtterance(' ');
   u.volume = 0;
@@ -151,7 +283,4 @@ export const estimateSpeechSec = (text: string, rate = 0.85) => {
   return text.split(/\s+/).length / 2.5 / rate + sentences * (PAUSE_MS / 1000) + 0.6;
 };
 
-const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-  'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen',
-  'twenty', 'twenty one'];
-export const numberWord = (n: number) => WORDS[n] ?? String(n);
+export { numberWord } from './voiceKey';

@@ -58,7 +58,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
       <Row label="Voice guidance" hint={speechSupported() ? 'Reads each step and counts reps' : 'Not supported in this browser'}>
         <Toggle label="Voice guidance" on={s.voice} onChange={(v) => update({ voice: v })} />
       </Row>
-      <Row label="Voice style" hint="Uses the best matching voice on your device">
+      <Row label="Voice style" hint={s.voiceGender === 'male' ? 'Soft recorded voice, same on every phone' : "Uses your phone's own voice"}>
         <Segmented<VoiceGender>
           label="Voice style"
           value={s.voiceGender}
@@ -72,7 +72,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           }}
         />
       </Row>
-      {voices.length > 0 && (
+      {voices.length > 0 && s.voiceGender === 'female' && (
         <div className="border-b border-teal-900/10 py-3 dark:border-white/10">
           <label htmlFor="voice-pick" className="font-semibold">
             Voice
