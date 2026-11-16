@@ -267,15 +267,20 @@ function DiamondPoint({ i, idx, reduced, x, y, l, dx, dy }: { i: number; idx: Mo
 // ---------- Step 12: Nasa Mula pinch ----------
 export function NasaMulaPinch({ phase, reps, reduced }: AnimProps) {
   const t = useRepT(phase, reps);
-  const squeeze = useTransform(t, (v) => (reduced ? 1 : Math.sin(Math.PI * seg(v, 0.05, 0.75))));
+  // Grip (0–0.2), gently pull away from the face (0.2–0.55), release and let go (0.55–0.85).
+  const squeeze = useTransform(t, (v) => (reduced ? 1 : v < 0.2 ? ease(v / 0.2) : v < 0.6 ? 1 : 1 - ease(seg(v, 0.6, 0.85))));
+  const pull = useTransform(t, (v) => (reduced ? 0 : v < 0.2 ? 0 : v < 0.55 ? ease(seg(v, 0.2, 0.45)) : 1 - ease(seg(v, 0.55, 0.75))));
   const m = MARMA.nasaMula;
-  const hand = useTransform(t, () => tf(m.x, m.y + 2, 0, 0.72));
+  // "Pull" = towards you: the hand grows slightly and lifts a touch, the skin glow brightens.
+  const hand = useTransform(pull, (p) => tf(m.x, m.y + 2 - p * 3, 0, 0.72 + p * 0.06));
+  const skinGlow = useTransform(pull, (p) => 0.2 + p * 0.8);
   return (
-    <Stage label="Closed eyes. Thumb and index finger gently pinch the bridge of the nose.">
+    <Stage label="Closed eyes. Thumb and index finger hold the bridge of the nose, gently pull it away from the face, and release.">
       <FaceFront closed />
+      <motion.ellipse cx={m.x} cy={m.y + 2} rx={16} ry={10} fill="url(#mh-glow)" opacity={skinGlow} />
       <MarmaDot x={m.x} y={m.y} r={7} reduced={reduced} />
-      <Hand t={hand} pose="pinch" squeeze={squeeze} gap={18} />
-      <Caption x={150} y={30} size={11}>Nasa Mula · bridge of the nose</Caption>
+      <Hand t={hand} pose="pinch" squeeze={squeeze} gap={12} />
+      <Caption x={150} y={30} size={11}>Bridge of the nose · gently pull, release</Caption>
     </Stage>
   );
 }

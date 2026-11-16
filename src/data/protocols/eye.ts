@@ -305,15 +305,15 @@ export const eyeProtocol: Protocol = {
       },
       posture: 'lying',
       eyes: 'closed',
-      shortInstruction: 'Pinch the bridge of the nose gently.',
+      shortInstruction: 'Thumb and index finger on the bridge: gently pull and release.',
       instruction:
-        'Hold the root of the nose (the bridge between the eyes) between thumb and index finger and pinch gently. 7 times, with normal breath.',
+        'Hold the root of the nose (the bridge between the eyes) between your thumb and index finger. Gently pull the skin away from the face, then release. 7 times, with normal breath.',
       reps: 7,
       breath: 'normal',
       tempoSec: 3,
       animationKey: 'nasaMulaPinch',
       voiceScript:
-        'Step twelve. Nasa mula. Hold the bridge of your nose between thumb and index finger. Pinch gently, and release. Seven times.',
+        'Step twelve. Nasa mula. Hold the bridge of your nose between your thumb and index finger. Gently pull, and release. Seven times.',
     },
     {
       id: 'cheekbones',
