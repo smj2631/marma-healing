@@ -1,0 +1,107 @@
+@import '@fontsource/cormorant-garamond/latin-500.css';
+@import '@fontsource/cormorant-garamond/latin-600.css';
+@import '@fontsource-variable/inter/wght.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f8f1e4;
+  --ink: #123a3f;
+  --skin: #f1d3b3;
+  --skin-shade: #e3b994;
+  --finger: #edc7a2;
+  --finger2: #d9a77c;
+  --nail: #fbe7d6;
+  --line: #7a4f35;
+  --hair: #3b2a22;
+  --cloth: #2d7a84;
+  --glow: #f4a226;
+  --stage: #fdf8ee;
+  --sky: #e9f1ee;
+  --ground: #efe2c9;
+  --mountain: #8fb3b0;
+  --hill: #6c9a8f;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0a0f14;
+  --ink: #d5ebe8;
+  --skin: #c99f7d;
+  --skin-shade: #a97f5e;
+  --finger: #d4a983;
+  --finger2: #b88a63;
+  --nail: #e9cdb6;
+  --line: #3e2619;
+  --hair: #1a120e;
+  --cloth: #1a4c52;
+  --glow: #ffbf47;
+  --stage: #111a21;
+  --sky: #16242c;
+  --ground: #1a2630;
+  --mountain: #3d5f62;
+  --hill: #2c4a48;
+  color-scheme: dark;
+}
+
+/* Eyes-closed part of the session: very dim, low-contrast, but counter stays legible. */
+.dimmed {
+  --stage: #070b0f;
+  --ink: #b7cbc8;
+  --glow: #e39a35;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-[var(--bg)] font-sans text-teal-900 antialiased dark:text-teal-200;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3 {
+  @apply font-serif;
+}
+
+.btn {
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 font-semibold transition active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-saffron-500;
+}
+.btn-primary {
+  @apply btn bg-teal-900 text-sand-50 shadow-lg shadow-teal-900/20 hover:bg-teal-800 dark:bg-saffron-400 dark:text-night-950 dark:hover:bg-saffron-300;
+}
+.btn-ghost {
+  @apply btn border border-teal-900/20 bg-white/50 text-teal-900 hover:bg-white dark:border-teal-200/20 dark:bg-white/5 dark:text-teal-200 dark:hover:bg-white/10;
+}
+.card {
+  @apply rounded-3xl border border-teal-900/10 bg-white/70 shadow-sm backdrop-blur dark:border-white/10 dark:bg-night-900/80;
+}
+.chip {
+  @apply inline-flex min-h-8 items-center gap-1.5 rounded-full bg-saffron-400/20 px-3 text-sm font-semibold text-saffron-600 dark:bg-saffron-400/15 dark:text-saffron-300;
+}
+.icon-btn {
+  @apply inline-flex h-12 w-12 items-center justify-center rounded-full transition hover:bg-teal-900/5 active:scale-95 dark:hover:bg-white/10;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Cormorant's default old-style numerals make "1" look like "I". */
+.font-serif,
+h1,
+h2,
+h3 {
+  font-variant-numeric: lining-nums;
+}
