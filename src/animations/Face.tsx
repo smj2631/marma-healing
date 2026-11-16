@@ -269,7 +269,7 @@ export function NasaMulaPinch({ phase, reps, reduced }: AnimProps) {
   const t = useRepT(phase, reps);
   const squeeze = useTransform(t, (v) => (reduced ? 1 : Math.sin(Math.PI * seg(v, 0.05, 0.75))));
   const m = MARMA.nasaMula;
-  const hand = useTransform(t, () => tf(m.x, m.y - 2, 180, 0.75));
+  const hand = useTransform(t, () => tf(m.x, m.y + 2, 0, 0.72));
   return (
     <Stage label="Closed eyes. Thumb and index finger gently pinch the bridge of the nose.">
       <FaceFront closed />
