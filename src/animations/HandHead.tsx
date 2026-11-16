@@ -5,7 +5,7 @@ import { HeadSide } from '../components/svg/HeadSide';
 import { TG, Caption, MarmaDot, Mirror, Stage, ease, seg, tf, useRepT } from '../components/svg/primitives';
 import { groupOfIndex, phaseInfo } from '../lib/timeline';
 import { useState } from 'react';
-import { Finger, Hand, HandShape } from '../components/svg/Hand';
+import { Hand, HandShape } from '../components/svg/Hand';
 import { MARMA } from '../data/marmaPoints';
 
 /**
@@ -26,10 +26,6 @@ export function KurchaPinch({ phase, reps, step, reduced }: AnimProps) {
   const scene = (
     <g transform="translate(-30 0)">
       <LeftHand />
-      {/* the other hand's fingertips, interlocked between these fingers */}
-      {[124, 156, 188].map((x, i) => (
-        <Finger key={i} x={x} y={198 + (i === 1 ? -4 : 0)} rot={180} L={44} W={14} nail={false} />
-      ))}
       <motion.circle cx={K.x} cy={K.y} r={ringR} fill="none" stroke="var(--glow)" strokeWidth={2.5} opacity={reduced ? 0 : ringO} />
       <MarmaDot x={K.x} y={K.y} r={10} reduced={reduced} />
       <Hand t={thumbTf} pose="thumb" />
