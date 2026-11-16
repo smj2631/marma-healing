@@ -38,7 +38,9 @@ const SettingsContext = createContext<Ctx | null>(null);
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(() => load('settings', DEFAULT_SETTINGS));
 
-  useEffect(() => save('settings', settings), [settings]);
+  useEffect(() => {
+    save('settings', settings);
+  }, [settings]);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
