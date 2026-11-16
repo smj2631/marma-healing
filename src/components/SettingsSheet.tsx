@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useSettings, type Tempo, type Theme, TEMPO_SECONDS } from '../lib/settings';
-import { speak, speechSupported } from '../lib/speech';
+import { listVoices, onVoicesChanged, speak, speechSupported } from '../lib/speech';
 import { Sheet } from './Sheet';
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
@@ -49,11 +49,43 @@ function Segmented<T extends string>({ value, options, onChange, label }: { valu
 
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { settings: s, update } = useSettings();
+  const [voices, setVoices] = useState(() => listVoices());
+  useEffect(() => onVoicesChanged(() => setVoices(listVoices())), []);
+  const preview = () => s.voice && speak('Breathe in gently. And breathe out.', { rate: s.voiceRate });
   return (
     <Sheet open={open} onClose={onClose} title="Settings">
       <Row label="Voice guidance" hint={speechSupported() ? 'Reads each step and counts reps' : 'Not supported in this browser'}>
         <Toggle label="Voice guidance" on={s.voice} onChange={(v) => update({ voice: v })} />
       </Row>
+      {voices.length > 0 && (
+        <div className="border-b border-teal-900/10 py-3 dark:border-white/10">
+          <label htmlFor="voice-pick" className="font-semibold">
+            Voice
+          </label>
+          <div className="text-sm opacity-70">Voices marked Natural, Premium or Enhanced sound the calmest.</div>
+          <div className="mt-2 flex gap-2">
+            <select
+              id="voice-pick"
+              value={s.voiceURI}
+              onChange={(e) => {
+                update({ voiceURI: e.target.value });
+                setTimeout(preview, 50);
+              }}
+              className="min-h-11 min-w-0 flex-1 rounded-xl border border-teal-900/20 bg-white px-3 text-teal-900 dark:border-white/20 dark:bg-night-800 dark:text-teal-200"
+            >
+              <option value="">Automatic (best available)</option>
+              {voices.map((v) => (
+                <option key={v.voiceURI} value={v.voiceURI}>
+                  {v.name} ({v.lang})
+                </option>
+              ))}
+            </select>
+            <button className="btn-ghost min-h-11 px-4 text-sm" onClick={preview}>
+              Test
+            </button>
+          </div>
+        </div>
+      )}
       <Row label="Voice speed" hint={`${s.voiceRate.toFixed(2)}×`}>
         <input
           aria-label="Voice speed"
@@ -63,7 +95,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           step={0.05}
           value={s.voiceRate}
           onChange={(e) => update({ voiceRate: +e.target.value })}
-          onPointerUp={() => s.voice && speak('This is my speaking pace.', { rate: s.voiceRate })}
+          onPointerUp={preview}
           className="w-36 accent-teal-700 dark:accent-saffron-400"
         />
       </Row>
@@ -89,6 +121,12 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           ]}
           onChange={(v) => update({ tempo: v })}
         />
+      </Row>
+      <Row label="Subtitles" hint="Show what the voice says">
+        <Toggle label="Subtitles" on={s.subtitles} onChange={(v) => update({ subtitles: v })} />
+      </Row>
+      <Row label="Calm background tone" hint="A soft drone during sessions">
+        <Toggle label="Calm background tone" on={s.ambient} onChange={(v) => update({ ambient: v })} />
       </Row>
       <Row label="Chimes">
         <Toggle label="Chimes" on={s.chimes} onChange={(v) => update({ chimes: v })} />

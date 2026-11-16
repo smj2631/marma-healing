@@ -68,6 +68,8 @@ export interface Step {
   animationKey: AnimationKey;
   /** What the voice says before the reps begin. */
   voiceScript: string;
+  /** Points visited in order, one per rep (repeats). Spoken and shown instead of a count. */
+  pointCycle?: string[];
   /** Shows a "Both sides together" label. */
   bothSides?: boolean;
   tip?: string;

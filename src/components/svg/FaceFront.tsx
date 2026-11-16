@@ -12,10 +12,12 @@ interface Props {
   pupilY?: MotionValue<number>;
   /** 1 = normal pupil size. */
   pupilScale?: MotionValue<number>;
+  /** 0..1: both eyes turn inwards and down (focusing on the nose tip). */
+  converge?: MotionValue<number>;
 }
 
 /** Front-facing face, drawn as a mirror image of the user. Eyes and pupils are controllable. */
-export function FaceFront({ lid, closed, pupilX, pupilY, pupilScale }: Props) {
+export function FaceFront({ lid, closed, pupilX, pupilY, pupilScale, converge }: Props) {
   const zero = useMotionValue(closed ? 1 : 0);
   const one = useMotionValue(1);
   const center = useMotionValue(0);
@@ -23,6 +25,7 @@ export function FaceFront({ lid, closed, pupilX, pupilY, pupilScale }: Props) {
   const px = pupilX ?? center;
   const py = pupilY ?? center;
   const ps = pupilScale ?? one;
+  const cv = converge ?? center;
   const uid = useId().replace(/:/g, '');
 
   return (
@@ -50,7 +53,7 @@ export function FaceFront({ lid, closed, pupilX, pupilY, pupilScale }: Props) {
       <path d="M166 152 Q188 138 216 150" fill="none" stroke="var(--hair)" strokeWidth="5" strokeLinecap="round" />
       {/* eyes */}
       {[EYES.left, EYES.right].map((e, i) => (
-        <Eye key={i} id={`${uid}-${i}`} e={e} lid={lidV} px={px} py={py} ps={ps} />
+        <Eye key={i} id={`${uid}-${i}`} e={e} lid={lidV} px={px} py={py} ps={ps} cv={cv} side={i === 0 ? 1 : -1} />
       ))}
       {/* nose */}
       <path d="M150 170 C 146 196 140 218 138 232 Q150 242 162 232 C 160 218 154 196 150 170" fill="var(--skin-shade)" opacity="0.55" />
@@ -71,7 +74,11 @@ function Eye({
   px,
   py,
   ps,
+  cv,
+  side,
 }: {
+  cv: MotionValue<number>;
+  side: number;
   id: string;
   e: { cx: number; cy: number; rx: number; ry: number };
   lid: MotionValue<number>;
@@ -79,8 +86,8 @@ function Eye({
   py: MotionValue<number>;
   ps: MotionValue<number>;
 }) {
-  const irisX = useTransform(px, (v) => e.cx + v * (e.rx - 10));
-  const irisY = useTransform(py, (v) => e.cy + v * (e.ry - 4));
+  const irisX = useTransform([px, cv], ([v, c]: number[]) => e.cx + v * (e.rx - 10) + side * c * 9);
+  const irisY = useTransform([py, cv], ([v, c]: number[]) => e.cy + v * (e.ry - 4) + c * 4);
   const pupilR = useTransform(ps, (v) => 3.6 * v);
   const hlX = useTransform(irisX, (v) => v - 3);
   const hlY = useTransform(irisY, (v) => v - 3);

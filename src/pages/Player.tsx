@@ -9,7 +9,7 @@ import { MarmaChip } from '../components/MarmaChip';
 import { RepCounter } from '../components/RepCounter';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { Sheet } from '../components/Sheet';
-import { completeChime, repChime, stepChime, unlockAudio } from '../lib/audio';
+import { completeChime, repChime, startAmbient, stepChime, stopAmbient, unlockAudio } from '../lib/audio';
 import { keepAwake, vibrate } from '../lib/device';
 import { useRepClock } from '../lib/repClock';
 import { tempoFactor, useSettings } from '../lib/settings';
@@ -57,13 +57,35 @@ export function Player({ protocol, mode, stepNumber }: Props) {
   const reps = step ? step.reps : 1;
   const tempoSec = step ? step.tempoSec * factor : item?.kind === 'transition' ? item.transition.durationSec : 1;
 
+  // ---------- Voice + subtitles ----------
+  const [subtitle, setSubtitle] = useState('');
+  const subTimer = useRef<number>();
   const say = useCallback((text: string, onEnd?: () => void, interrupt = true) => {
     const s = sRef.current;
+    window.clearTimeout(subTimer.current);
+    const clearLater = (ms: number) => {
+      window.clearTimeout(subTimer.current);
+      subTimer.current = window.setTimeout(() => setSubtitle(''), ms);
+    };
     if (!s.voice) {
+      // Voice off: subtitles still guide the user.
+      setSubtitle(text);
+      clearLater(Math.max(2200, estimateSpeechSec(text, 1) * 1000));
       onEnd?.();
       return;
     }
-    speak(text, { rate: s.voiceRate, interrupt, onEnd });
+    speak(text, {
+      rate: s.voiceRate,
+      interrupt,
+      onSentence: (line) => {
+        window.clearTimeout(subTimer.current);
+        setSubtitle(line);
+      },
+      onEnd: () => {
+        clearLater(1400);
+        onEnd?.();
+      },
+    });
   }, []);
 
   // ---------- The rep clock: one source of truth for animation, counter, voice, chime and haptics ----------
@@ -80,12 +102,18 @@ export function Player({ protocol, mode, stepNumber }: Props) {
       const newGroup = !!pos && pos.inGroup === 1;
       if (s.chimes) repChime();
       if (s.haptics) vibrate(newGroup && rep > 1 ? [30, 60, 30] : 25);
-      if (!s.voice) return;
       const parts: string[] = [];
-      if (newGroup && pos && step.pattern) parts.push(`${step.pattern.unit} ${numberWord(pos.groupIndex + 1)}. ${pos.group.name.replace(/\s*↔\s*/g, ' and ')}.`);
+      if (newGroup && pos && step.pattern) {
+        const name = pos.group.name.replace(/\s*↔\s*/g, ' and ');
+        const sameAsUnit = name.toLowerCase().startsWith(step.pattern.unit.toLowerCase());
+        parts.push(`${step.pattern.unit} ${numberWord(pos.groupIndex + 1)}.${sameAsUnit ? '' : ` ${name}.`}`);
+      }
       const count = pos ? pos.inGroup : rep;
       const cues = pos?.group.cues ?? step.cues;
-      if (step.breath === 'synced') {
+      if (step.pointCycle) {
+        // One point per breath: name the point instead of counting.
+        parts.push(`${step.pointCycle[(rep - 1) % step.pointCycle.length]}. Tap gently, and inhale.`);
+      } else if (step.breath === 'synced') {
         parts.push(`${s.countAloud ? `${numberWord(count)}. ` : ''}Inhale${cues ? `, ${cues[0]}` : ''}.`);
       } else {
         if (s.countAloud) parts.push(numberWord(count) + '.');
@@ -94,7 +122,7 @@ export function Player({ protocol, mode, stepNumber }: Props) {
       if (parts.length) say(parts.join(' '));
     },
     onHalf: (rep) => {
-      if (!step || !sRef.current.voice) return;
+      if (!step) return;
       const pos = patternPosition(step.pattern, rep);
       const cues = pos?.group.cues ?? step.cues;
       if (step.breath === 'synced') say(`Exhale${cues ? `, ${cues[1]}` : ''}.`);
@@ -267,11 +295,20 @@ export function Player({ protocol, mode, stepNumber }: Props) {
     if (mode === 'guided' && stage !== 'start' && stage !== 'complete') saveProgress({ protocolId: protocol.id, itemIndex: guidedIndex });
   }, [mode, stage, guidedIndex, protocol.id]);
 
+  // Calm background tone while a guided session is playing.
+  const ambientOn = mode === 'guided' && settings.ambient && !paused && stage !== 'start' && stage !== 'complete';
+  useEffect(() => {
+    if (ambientOn) startAmbient();
+    else stopAmbient();
+  }, [ambientOn]);
+
   // Cleanup on leave
   useEffect(
     () => () => {
       stopSpeech();
+      stopAmbient();
       keepAwake(false);
+      window.clearTimeout(subTimer.current);
     },
     [],
   );
@@ -445,6 +482,20 @@ export function Player({ protocol, mode, stepNumber }: Props) {
               {item.transition.text}
             </motion.p>
           )}
+          {settings.subtitles && subtitle && !paused && stage !== 'getReady' && item.kind === 'step' && (
+            <motion.div
+              key="subtitle"
+              className="pointer-events-none absolute inset-x-3 bottom-2 flex justify-center"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              aria-live="polite"
+            >
+              <p className={`max-w-md rounded-2xl px-4 py-2 text-center text-[1.05rem] font-medium leading-snug ${dim ? 'bg-black/70 text-teal-100/90' : 'bg-night-950/75 text-sand-50'}`}>
+                {subtitle}
+              </p>
+            </motion.div>
+          )}
           {paused && (
             <motion.div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--stage)]/70 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <PlayIcon width={56} height={56} />
@@ -492,7 +543,7 @@ export function Player({ protocol, mode, stepNumber }: Props) {
                 {step.pattern!.unit} {pos.groupIndex + 1} of {pos.groupCount} · {repShown ? pos.inGroup : 0}/{pos.group.count}
                 <br />
                 <span className="opacity-70">
-                  {pos.group.name} · Total {repShown}/{step.reps}
+                  {step.pointCycle && repShown ? step.pointCycle[(repShown - 1) % step.pointCycle.length].split(',')[0] : pos.group.name} · Total {repShown}/{step.reps}
                 </span>
               </p>
             )}

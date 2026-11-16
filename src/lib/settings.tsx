@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { load, save } from './storage';
+import { setVoiceURI } from './speech';
 
 export type Tempo = 'slow' | 'normal' | 'quick';
 export type Theme = 'system' | 'light' | 'dark';
@@ -12,16 +13,23 @@ export interface Settings {
   haptics: boolean;
   chimes: boolean;
   theme: Theme;
+  subtitles: boolean;
+  /** '' = automatic (best available voice). */
+  voiceURI: string;
+  ambient: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   voice: true,
-  voiceRate: 0.9,
+  voiceRate: 0.85,
   countAloud: true,
   tempo: 'normal',
   haptics: true,
   chimes: true,
   theme: 'system',
+  subtitles: true,
+  voiceURI: '',
+  ambient: true,
 };
 
 export const TEMPO_SECONDS: Record<Tempo, number> = { slow: 5, normal: 4, quick: 3 };
@@ -40,6 +48,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     save('settings', settings);
+    setVoiceURI(settings.voiceURI);
   }, [settings]);
 
   useEffect(() => {

@@ -41,15 +41,15 @@ export const eyeProtocol: Protocol = {
       },
       posture: 'sitting',
       eyes: 'open',
-      shortInstruction: 'Pinch the left thumb from its tip down to the Kurcha point.',
+      shortInstruction: 'Pinch the left thumb: tip, middle, then the Kurcha point. Lift between pinches.',
       instruction:
-        'Interlock your right hand with your left hand. Then gently pinch your left thumb, starting at the tip and ending at the Kurcha point at its base. 7 times, with normal breath.',
+        'Interlock your right hand with your left hand. With your right thumb and index finger, gently pinch your left thumb, starting at the tip and ending at the Kurcha point at its base: pinch, release, lift and move down. Do not slide. 7 times, with normal breath.',
       reps: 7,
       breath: 'normal',
       tempoSec: 4,
       animationKey: 'kurchaPinch',
       voiceScript:
-        'Step one. Kurcha marma. Interlock your right hand with your left. Gently pinch your left thumb, from the tip down to the fleshy mound at its base. Seven times.',
+        'Step one. Kurcha marma. Interlock your right hand with your left. With your right thumb and index finger, gently pinch your left thumb. Start at the tip, and pinch your way down to the fleshy mound at its base. Pinch and release. Do not slide. Seven times.',
     },
     {
       id: 'vidhura',
@@ -78,16 +78,16 @@ export const eyeProtocol: Protocol = {
       title: 'Near and far focus',
       posture: 'sitting',
       eyes: 'open',
-      shortInstruction: 'Thumb at 25 cm. Focus far, then back on your thumb.',
+      shortInstruction: 'Focus far away, then on the tip of your nose.',
       instruction:
-        'Hold your thumb about 25 cm (10 inches) in front of your face. Focus on something 3 to 6 m (10 to 20 feet) away, then back on your thumb. 3 rounds, with normal breath.',
+        'Focus on something 3 to 6 m (10 to 20 feet) away. Then bring your focus to the tip of your nose. 3 rounds, with normal breath.',
       reps: 3,
       breath: 'normal',
-      cues: ['Look far', 'Now your thumb'],
+      cues: ['Look far away', 'Now the tip of your nose'],
       tempoSec: 8,
       animationKey: 'nearFar',
       voiceScript:
-        'Step three. Near and far focus. Hold your thumb about a hand span in front of your face. Look at something far away, then back at your thumb. Three rounds.',
+        'Step three. Near and far focus. Look at something far away. Then bring your focus to the tip of your nose. Three rounds.',
     },
     {
       id: 'figure-8',
@@ -135,7 +135,7 @@ export const eyeProtocol: Protocol = {
       title: 'Below the eyebrows',
       posture: 'lying',
       eyes: 'closed',
-      shortInstruction: '4 fingers glide under the brows, inside to outside.',
+      shortInstruction: '4 fingertips glide just below the brows, inside to outside.',
       instruction:
         'Using all 4 fingers together, gently massage just below the eyebrows, from the inner end to the outer end. 7 strokes, both sides together.',
       reps: 7,
@@ -152,16 +152,16 @@ export const eyeProtocol: Protocol = {
       title: 'Under the eyes',
       posture: 'lying',
       eyes: 'closed',
-      shortInstruction: 'Same 4 fingers along the bone under the eyes.',
+      shortInstruction: '4 fingertips along the bony rim under the eyes, inside to outside.',
       instruction:
-        'With the same 4 fingers, stroke along the bone under the eyes, from inside to outside. 7 strokes. Never press on the eyeball.',
+        'Rest the same 4 fingertips on the bony rim below the eyes (the top of the cheekbone), not on the eyes. Stroke gently from inside to outside. 7 strokes. Never press on the eyeball.',
       reps: 7,
       breath: 'normal',
       tempoSec: 4,
       bothSides: true,
       animationKey: 'underEyeStroke',
       voiceScript:
-        'Step seven. Under the eyes. Move your fingers to the bone below your eyes. Stroke from the inside to the outside, without pressing on the eyes. Seven strokes.',
+        'Step seven. Under the eyes. Move your fingertips down onto the bony rim below your eyes, not on the eyes themselves. Stroke gently from the inside to the outside. Seven strokes.',
     },
     {
       id: 'eyebrow-points',
@@ -269,16 +269,24 @@ export const eyeProtocol: Protocol = {
       ],
       posture: 'lying',
       eyes: 'closed',
-      shortInstruction: 'Trace a diamond: nose root, left eye, nose tip, right eye.',
+      shortInstruction: 'Tap each point gently, one breath per point. Lift and move; no tracing.',
       instruction:
-        'Slowly trace a diamond, shaped like a kaju katli sweet: Nasa Mula (root of the nose) → Apanga (outer corner of the left eye) → Nasa Agra (tip of the nose) → Apanga (outer corner of the right eye) → back to Nasa Mula. 3 times, with breath.',
-      reps: 3,
+        'With one fingertip, gently tap the four points of a diamond, shaped like a kaju katli sweet, taking one full breath at each point: Nasa Mula (root of the nose) → Apanga (outer corner of the left eye) → Nasa Agra (tip of the nose) → Apanga (outer corner of the right eye), then back to Nasa Mula. Do not slide between points: lift your finger and move to the next point. 3 rounds.',
+      reps: 12,
       breath: 'synced',
-      cues: ['across to the left eye, down to the nose tip', 'across to the right eye, back to the top'],
-      tempoSec: 10,
+      pattern: {
+        unit: 'Round',
+        groups: [
+          { name: 'Round 1', count: 4 },
+          { name: 'Round 2', count: 4 },
+          { name: 'Round 3', count: 4 },
+        ],
+      },
+      pointCycle: ['Nasa Mula, root of the nose', 'Apanga, left eye corner', 'Nasa Agra, tip of the nose', 'Apanga, right eye corner'],
+      tempoSec: 6,
       animationKey: 'kajuKatli',
       voiceScript:
-        'Step eleven. The kaju katli diamond. Start at the root of your nose. With one fingertip, slowly trace a diamond: out to the corner of your left eye, down to the tip of your nose, out to your right eye, and back. Three times, with your breath.',
+        'Step eleven. The kaju katli diamond. With one fingertip, you will gently tap four points, taking one breath at each: the root of the nose, the outer corner of the left eye, the tip of the nose, and the outer corner of the right eye. Lift your finger to move between points. Three rounds.',
     },
     {
       id: 'nasa-mula',
@@ -306,19 +314,20 @@ export const eyeProtocol: Protocol = {
       title: 'Cheekbones',
       marma: {
         name: 'Ganda region',
-        location: 'Along the cheekbones, below and to the side of the eyes.',
+        location: 'Along the cheekbones: the bony ridge below the outer part of each eye.',
       },
       posture: 'lying',
       eyes: 'closed',
-      shortInstruction: 'Push gently along the cheekbones, bottom to top.',
-      instruction: 'Gently push along the cheekbones from bottom to top. 7 times.',
+      shortInstruction: 'Fingertips on the cheekbones. Push gently upward along the bone.',
+      instruction:
+        'Place your fingertips on the cheekbones: the bony ridge below the outer part of each eye, well above the mouth. Gently push along the bone from bottom to top. 7 times.',
       reps: 7,
       breath: 'normal',
       tempoSec: 4,
       bothSides: true,
       animationKey: 'cheekbones',
       voiceScript:
-        'Step thirteen. Cheekbones. Place your fingertips on your cheekbones. Gently push upward, from bottom to top. Seven times.',
+        'Step thirteen. Cheekbones. Place your fingertips on the bony ridge of your cheekbones, below the outer part of each eye. Gently push upward along the bone, from bottom to top. Seven times.',
     },
     {
       id: 'palming',
@@ -326,15 +335,15 @@ export const eyeProtocol: Protocol = {
       title: 'Palming',
       posture: 'lying',
       eyes: 'closed',
-      shortInstruction: 'Warm palms over closed eyes. 7 slow breaths.',
+      shortInstruction: 'Base of the warm palms over closed eyes. 7 slow breaths.',
       instruction:
-        'Optional: rub your palms together until warm. Place the base of the palms over your closed eyes and take 7 slow breaths.',
+        'Optional: rub your palms together until warm. Place the base (heel) of each palm gently over your closed eyes, with your fingers resting on your forehead. No pressure on the eyeballs. Take 7 slow breaths.',
       reps: 7,
       breath: 'synced',
       tempoSec: 9,
       animationKey: 'palming',
       voiceScript:
-        'Step fourteen. Palming. If you like, rub your palms together until warm. Then rest the base of your palms over your closed eyes. Take seven slow breaths.',
+        'Step fourteen. Palming. If you like, rub your palms together until warm. Then rest the base of each palm gently over your closed eyes, fingers on your forehead. No pressure. Take seven slow breaths.',
     },
   ],
   transitions: [

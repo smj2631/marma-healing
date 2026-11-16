@@ -2,99 +2,115 @@ import { motion, useTransform } from 'framer-motion';
 import type { AnimProps } from './types';
 import { LeftHand, HAND_THUMB } from '../components/svg/LeftHand';
 import { HeadSide } from '../components/svg/HeadSide';
-import { TG, Caption, Fingertip, MarmaDot, Stage, ease, lerp, partialPath, qBez, seg, tf, useRepT } from '../components/svg/primitives';
+import { TG, Caption, MarmaDot, Stage, ease, lerp, qBez, seg, tf, useRepT } from '../components/svg/primitives';
+import { Finger, Hand, HandShape } from '../components/svg/Hand';
 import { MARMA } from '../data/marmaPoints';
 
 const thumbAt = (u: number) => qBez(HAND_THUMB.tip, HAND_THUMB.ctrl, HAND_THUMB.base, u);
+/** Three pinch spots per rep: thumb tip → middle → Kurcha at the base. */
+const PINCH_U = [0.08, 0.5, 0.97];
+// The pinching right hand comes in from the right side.
+const PINCH_ANGLE = -100;
 
-/** Step 1 — right fingers interlock, then a pinch slides from thumb tip to Kurcha each rep. */
+/** Step 1 — right fingers interlock, then the right thumb + index pinch down the left thumb (lift, never slide). */
 export function KurchaPinch({ phase, reps, reduced }: AnimProps) {
   const t = useRepT(phase, reps);
-  // Interlock slides in at the start of the first rep and stays.
   const lock = useTransform(phase, (p) => ease(seg(p, 0, 0.35)));
-  const lockTf = useTransform(lock, (v) => `translate(${lerp(-150, 0, v)} ${lerp(-60, 0, v)})`);
-  const lockOpacity = useTransform(lock, [0, 0.2, 1], [0, 0.9, 0.95]);
-  // Pinch travels tip → base during 0.1–0.75, then lifts.
-  const u = useTransform(t, (v) => ease(seg(v, 0.1, 0.75)));
-  const lift = useTransform(t, (v) => (v < 0.75 ? 0 : seg(v, 0.75, 1)));
-  const squeeze = useTransform(t, (v) => (v < 0.08 ? seg(v, 0, 0.08) : v > 0.75 ? 1 - seg(v, 0.75, 0.85) : 1));
-  const padA = useTransform([u, squeeze], ([a, s]: number[]) => {
-    const p = thumbAt(a);
-    return tf(p.x - 20 + s * 6, p.y - 4, 60);
+  const lockTf = useTransform(lock, (v) => `translate(0 ${lerp(-70, 0, v)})`);
+  const lockOpacity = useTransform(lock, [0, 0.2, 1], [0, 0.95, 1]);
+  // Which spot, and where we are inside that spot's window.
+  const state = useTransform(t, (v) => {
+    const k = Math.min(2, Math.floor(v * 3));
+    const w = v * 3 - k; // 0..1 inside the window
+    const prevU = PINCH_U[(k + 2) % 3];
+    const move = ease(seg(w, 0, 0.3)); // lift and move (pads open)
+    const u = lerp(prevU, PINCH_U[k], move);
+    const squeeze = w < 0.3 ? 0 : Math.sin(Math.PI * seg(w, 0.32, 0.92));
+    const lift = w < 0.3 ? Math.sin(Math.PI * seg(w, 0, 0.3)) : 0;
+    return { u, squeeze, lift, k };
   });
-  const padB = useTransform([u, squeeze], ([a, s]: number[]) => {
-    const p = thumbAt(a);
-    return tf(p.x + 22 - s * 6, p.y + 6, -110);
+  // The right thumb presses on the front of the left thumb; the right index supports from behind.
+  const handTf = useTransform(state, ({ u, lift, squeeze }) => {
+    const p = thumbAt(reduced ? 0.97 : u);
+    return tf(p.x - 2 + lift * 16 - squeeze * 3, p.y - lift * 6, PINCH_ANGLE, 0.95);
   });
-  const padOpacity = useTransform(lift, [0, 0.4, 1], [1, 0, 0]);
-  const trail = useTransform(u, (v) => partialPath(thumbAt, v));
-  const trailOpacity = useTransform(t, [0, 0.1, 0.75, 1], [0, 1, 1, 0]);
+  const indexTf = useTransform(state, ({ u, lift }) => {
+    const p = thumbAt(reduced ? 0.97 : u);
+    return tf(p.x - 20 - lift * 6, p.y - 10 - lift * 8, 150, 0.7);
+  });
+  const indexO = useTransform(state, ({ lift }) => (reduced ? 1 : 1 - lift));
+  const ringR = useTransform(state, ({ squeeze }) => 8 + squeeze * 10);
+  const ringO = useTransform(state, ({ squeeze }) => squeeze * 0.9);
+  const ringX = useTransform(state, ({ u }) => thumbAt(u).x);
+  const ringY = useTransform(state, ({ u }) => thumbAt(u).y);
+  const spotOpacity = PINCH_U.map((_, i) =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useTransform(state, (s) => (s.k === i ? 0.4 + 0.6 * s.squeeze : 0.25)),
+  );
 
   return (
-    <Stage label="Left palm. The right hand interlocks and pinches the thumb from the tip down to the Kurcha point.">
+    <Stage label="Left palm. The right thumb and index finger pinch the left thumb at the tip, the middle and the Kurcha point, lifting between pinches.">
+      <g transform="translate(-34 0)">
       <LeftHand />
       <TG t={lockTf} opacity={lockOpacity}>
-        {/* right-hand fingers resting between the left fingers */}
-        {[124, 156, 188].map((x, i) => (
-          <g key={i}>
-            <line x1={x - 40} y1={150 + i * 4} x2={x} y2={178 + i * 2} stroke="var(--line)" strokeWidth={25} strokeLinecap="round" />
-            <line x1={x - 40} y1={150 + i * 4} x2={x} y2={178 + i * 2} stroke="var(--finger2)" strokeWidth={22} strokeLinecap="round" />
-          </g>
+        {/* right-hand fingers interlocked between the left fingers */}
+        {[
+          [124, 214],
+          [156, 212],
+          [188, 216],
+        ].map(([x, y], i) => (
+          <Finger key={i} x={x} y={y} rot={180} L={64} W={15} nail={false} />
         ))}
       </TG>
-      <motion.path d={trail} fill="none" stroke="var(--glow)" strokeWidth={8} strokeLinecap="round" opacity={trailOpacity} filter="url(#mh-soft)" />
+      {PINCH_U.map((u, i) => {
+        const p = thumbAt(u);
+        return <motion.circle key={i} cx={p.x} cy={p.y} r={i === 2 ? 14 : 9} fill="url(#mh-glow)" opacity={reduced ? 0.6 : spotOpacity[i]} />;
+      })}
       <MarmaDot x={MARMA.kurcha.x} y={MARMA.kurcha.y} r={9} reduced={reduced} label="Kurcha" />
-      {!reduced && (
-        <motion.g opacity={padOpacity}>
-          <TG t={padA}>
-            <Fingertip w={18} h={22} tone="b" />
-          </TG>
-          <TG t={padB}>
-            <Fingertip w={22} h={24} tone="b" />
-          </TG>
-        </motion.g>
-      )}
-      <Caption x={150} y={40} size={11}>Left hand · tip → base</Caption>
+      {/* tip of the right index finger, just visible behind the left thumb */}
+      <TG t={indexTf} opacity={indexO}>
+        <Finger L={30} W={13} />
+      </TG>
+      <motion.circle cx={ringX} cy={ringY} r={ringR} fill="none" stroke="var(--glow)" strokeWidth={2.5} opacity={reduced ? 0 : ringO} />
+      <Hand t={handTf} pose="thumb" />
+      </g>
+      <Caption x={150} y={40} size={11}>Pinch · lift · pinch — tip → base</Caption>
     </Stage>
   );
 }
 
-/** Step 2 — bunched fingertips tap the Vidhura point behind the ear. */
+/** Step 2 — the five fingertips of each hand gathered into a point tap the Vidhura point. */
 export function VidhuraTap({ phase, reps, reduced }: AnimProps) {
   const t = useRepT(phase, reps);
   const away = useTransform(t, (v) => {
-    // approach and hit at 0.35, then pull back
+    if (reduced) return 0;
     if (v < 0.35) return 1 - ease(v / 0.35);
     return ease(seg(v, 0.4, 0.9));
   });
-  const cluster = useTransform(away, (a) => tf(MARMA.vidhura.x + 16 + a * 34, MARMA.vidhura.y + 8 + a * 10, -35));
+  // Hand comes from behind and below the ear; direction of the wrist ≈ (0.6, 0.8).
+  const cluster = useTransform(away, (a) => tf(MARMA.vidhura.x + a * 0.6 * 26, MARMA.vidhura.y + a * 0.8 * 26, -37, 1.05));
   const rippleR = useTransform(t, (v) => (v < 0.35 ? 0 : 6 + seg(v, 0.35, 0.95) * 34));
   const rippleO = useTransform(t, (v) => (v < 0.35 ? 0 : 1 - seg(v, 0.35, 0.95)));
   return (
-    <Stage label="Side view of the head. Bunched fingertips tap the Vidhura point behind the ear.">
+    <Stage label="Side view of the head. All five fingertips gathered together tap the Vidhura point behind the ear.">
       <HeadSide />
       <motion.circle cx={MARMA.vidhura.x} cy={MARMA.vidhura.y} r={rippleR} fill="none" stroke="var(--glow)" strokeWidth={3} opacity={rippleO} />
       <MarmaDot x={MARMA.vidhura.x} y={MARMA.vidhura.y} r={8} reduced={reduced} />
-      {!reduced && (
-        <TG t={cluster}>
-          {/* five fingertips bunched together */}
-          {[
-            [-8, -4],
-            [6, -6],
-            [-2, 6],
-            [10, 6],
-            [2, -14],
-          ].map(([dx, dy], i) => (
-            <g key={i} transform={`translate(${dx} ${dy})`}>
-              <Fingertip w={13} h={16} nail={false} tone={i % 2 ? 'a' : 'b'} />
-            </g>
-          ))}
-        </TG>
-      )}
+      <Hand t={cluster} pose="bunch" />
       <Caption x={150} y={40} size={12}>Both sides together</Caption>
-      <text x={MARMA.vidhura.x} y={MARMA.vidhura.y + 46} textAnchor="middle" className="fill-[var(--ink)] text-[11px] font-semibold">
+      <text x={MARMA.vidhura.x - 46} y={MARMA.vidhura.y + 6} textAnchor="middle" className="fill-[var(--ink)] text-[11px] font-semibold">
         Vidhura
       </text>
+      {/* inset: what "five fingertips together" looks like */}
+      <g transform="translate(52 300)">
+        <circle r={34} fill="var(--stage)" stroke="var(--line)" strokeOpacity={0.4} />
+        <g transform="translate(0 -22) scale(0.55)">
+          <HandShape pose="bunch" />
+        </g>
+        <text y={48} textAnchor="middle" className="fill-[var(--ink)] text-[9px] font-semibold uppercase">
+          5 tips together
+        </text>
+      </g>
     </Stage>
   );
 }

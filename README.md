@@ -9,6 +9,8 @@ An installable, offline-first Progressive Web App that guides you through Ayurve
 ## Features
 
 - **Guided session**: auto-advances through all 14 steps and both transitions. The voice reads each step and counts reps, soft chimes mark each rep and step change, and a 3-second "Get ready" countdown announces the next step.
+- **Subtitles** show every line the voice speaks (also when voice is off).
+- **Calm voice**: picks the most natural voice on the device (Natural / Premium / Enhanced voices first), speaks sentence by sentence with soft pauses, and lets you choose any installed English voice in Settings. An optional soft drone plays underneath.
 - **Eyes-closed mode**: from step 6 the screen dims, the counter grows, and audio carries the session.
 - **Learn mode**: `/protocols/eye/step/:n` for any single step, with replay, full instructions and read-aloud.
 - **One rep clock** drives the animation, counter, voice, chimes and haptics, so they never drift apart.
