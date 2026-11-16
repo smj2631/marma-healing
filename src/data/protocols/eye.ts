@@ -36,20 +36,27 @@ export const eyeProtocol: Protocol = {
       title: 'Kurcha Marma',
       marma: {
         name: 'Kurcha',
-        location: 'At the base of the thumb on the palm side, the fleshy thumb mound.',
-        note: 'Traditionally linked to eyesight.',
+        location: 'On the palm, the soft fleshy mound at the base of the thumb.',
+        note: 'Traditionally linked to eyesight. Interlocking your fingers brings the other thumb right onto this point.',
       },
       posture: 'sitting',
       eyes: 'open',
-      shortInstruction: 'Pinch the left thumb: tip, middle, then the Kurcha point. Lift between pinches.',
+      shortInstruction: 'Interlock your fingers. Gently press the Kurcha point with your thumb, 7 times. Then switch hands.',
       instruction:
-        'Interlock your right hand with your left hand. With your right thumb and index finger, gently pinch your left thumb, starting at the tip and ending at the Kurcha point at its base: pinch, release, lift and move down. Do not slide. 7 times, with normal breath.',
-      reps: 7,
+        'Interlock the fingers of both hands. Your right thumb now rests on the Kurcha point of your left hand: the soft mound at the base of the left thumb, on the palm side. Gently press and release, 7 times. Then switch: press the Kurcha point of your right hand with your left thumb, 7 times. Normal breath.',
+      reps: 14,
       breath: 'normal',
-      tempoSec: 4,
+      pattern: {
+        unit: 'Hand',
+        groups: [
+          { name: 'Left hand', count: 7, announce: 'Left hand.' },
+          { name: 'Right hand', count: 7, announce: 'Now switch. Left thumb on the right hand.' },
+        ],
+      },
+      tempoSec: 3.5,
       animationKey: 'kurchaPinch',
       voiceScript:
-        'Step one. Kurcha marma. Interlock your right hand with your left. With your right thumb and index finger, gently pinch your left thumb. Start at the tip, and pinch your way down to the fleshy mound at its base. Pinch and release. Do not slide. Seven times.',
+        'Step one. Kurcha marma. Interlock the fingers of both hands. Let your right thumb rest on the soft mound at the base of your left thumb. Gently press and release, seven times. Then we will switch hands.',
     },
     {
       id: 'vidhura',
@@ -120,11 +127,11 @@ export const eyeProtocol: Protocol = {
         unit: 'Set',
         groups: [
           // Breath pairing is editable: [inhale cue, exhale cue]
-          { name: 'Right ↔ Left', count: 3, cues: ['look right', 'look left'] },
-          { name: 'Up ↔ Down', count: 3, cues: ['look up', 'look down'] },
+          { name: 'Right ↔ Left', count: 3, announce: 'Right and left.', cues: ['look right', 'look left'] },
+          { name: 'Up ↔ Down', count: 3, announce: 'Now up and down.', cues: ['look up', 'look down'] },
         ],
       },
-      tempoSec: 7,
+      tempoSec: 9,
       animationKey: 'sideUpDown',
       voiceScript:
         'Step five. Still lying down. Move only your eyes, with your breath. First right and left, then up and down. Three rounds each.',
@@ -277,13 +284,13 @@ export const eyeProtocol: Protocol = {
       pattern: {
         unit: 'Round',
         groups: [
-          { name: 'Round 1', count: 4 },
-          { name: 'Round 2', count: 4 },
-          { name: 'Round 3', count: 4 },
+          { name: 'Round 1', count: 4, announce: '' },
+          { name: 'Round 2', count: 4, announce: '' },
+          { name: 'Round 3', count: 4, announce: '' },
         ],
       },
       pointCycle: ['Nasa Mula, root of the nose', 'Apanga, left eye corner', 'Nasa Agra, tip of the nose', 'Apanga, right eye corner'],
-      tempoSec: 6,
+      tempoSec: 8,
       animationKey: 'kajuKatli',
       voiceScript:
         'Step eleven. The kaju katli diamond. With one fingertip, you will gently tap four points, taking one breath at each: the root of the nose, the outer corner of the left eye, the tip of the nose, and the outer corner of the right eye. Lift your finger to move between points. Three rounds.',
@@ -340,7 +347,7 @@ export const eyeProtocol: Protocol = {
         'Optional: rub your palms together until warm. Place the base (heel) of each palm gently over your closed eyes, with your fingers resting on your forehead. No pressure on the eyeballs. Take 7 slow breaths.',
       reps: 7,
       breath: 'synced',
-      tempoSec: 9,
+      tempoSec: 10,
       animationKey: 'palming',
       voiceScript:
         'Step fourteen. Palming. If you like, rub your palms together until warm. Then rest the base of each palm gently over your closed eyes, fingers on your forehead. No pressure. Take seven slow breaths.',

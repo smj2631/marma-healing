@@ -60,7 +60,7 @@ export function Player({ protocol, mode, stepNumber }: Props) {
   // ---------- Voice + subtitles ----------
   const [subtitle, setSubtitle] = useState('');
   const subTimer = useRef<number>();
-  const say = useCallback((text: string, onEnd?: () => void, interrupt = true) => {
+  const say = useCallback((text: string, onEnd?: () => void, interrupt = true, split = true) => {
     const s = sRef.current;
     window.clearTimeout(subTimer.current);
     const clearLater = (ms: number) => {
@@ -77,6 +77,7 @@ export function Player({ protocol, mode, stepNumber }: Props) {
     speak(text, {
       rate: s.voiceRate,
       interrupt,
+      split,
       onSentence: (line) => {
         window.clearTimeout(subTimer.current);
         setSubtitle(line);
@@ -104,29 +105,32 @@ export function Player({ protocol, mode, stepNumber }: Props) {
       if (s.haptics) vibrate(newGroup && rep > 1 ? [30, 60, 30] : 25);
       const parts: string[] = [];
       if (newGroup && pos && step.pattern) {
-        const name = pos.group.name.replace(/\s*↔\s*/g, ' and ');
-        const sameAsUnit = name.toLowerCase().startsWith(step.pattern.unit.toLowerCase());
-        parts.push(`${step.pattern.unit} ${numberWord(pos.groupIndex + 1)}.${sameAsUnit ? '' : ` ${name}.`}`);
+        const g = pos.group;
+        if (g.announce !== undefined) {
+          if (g.announce) parts.push(g.announce);
+        } else {
+          const name = g.name.replace(/\s*↔\s*/g, ' and ');
+          const sameAsUnit = name.toLowerCase().startsWith(step.pattern.unit.toLowerCase());
+          parts.push(`${step.pattern.unit} ${numberWord(pos.groupIndex + 1)}.${sameAsUnit ? '' : ` ${name}.`}`);
+        }
       }
       const count = pos ? pos.inGroup : rep;
       const cues = pos?.group.cues ?? step.cues;
-      if (step.pointCycle) {
-        // One point per breath: name the point instead of counting.
-        parts.push(`${step.pointCycle[(rep - 1) % step.pointCycle.length]}. Tap gently, and inhale.`);
-      } else if (step.breath === 'synced') {
-        parts.push(`${s.countAloud ? `${numberWord(count)}. ` : ''}Inhale${cues ? `, ${cues[0]}` : ''}.`);
+      if (step.breath === 'synced') {
+        // Breath steps: only "Inhale" / "Exhale" — no counts, no rounds, so nothing overlaps.
+        parts.push('Inhale.');
       } else {
         if (s.countAloud) parts.push(numberWord(count) + '.');
         if (cues) parts.push(cues[0] + '.');
       }
-      if (parts.length) say(parts.join(' '));
+      if (parts.length) say(parts.join(' '), undefined, true, false);
     },
     onHalf: (rep) => {
       if (!step) return;
       const pos = patternPosition(step.pattern, rep);
       const cues = pos?.group.cues ?? step.cues;
-      if (step.breath === 'synced') say(`Exhale${cues ? `, ${cues[1]}` : ''}.`);
-      else if (cues) say(cues[1] + '.');
+      if (step.breath === 'synced') say('Exhale.', undefined, true, false);
+      else if (cues) say(cues[1] + '.', undefined, true, false);
     },
     onDone: () => {
       if (mode === 'guided') window.setTimeout(() => advance(true), 900);

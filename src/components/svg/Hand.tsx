@@ -1,139 +1,142 @@
-import { useId, type ReactNode } from 'react';
 import { useMotionValue, useTransform, type MotionValue } from 'framer-motion';
 import { TG } from './primitives';
 
 /**
- * Reusable hand drawings. Local frame: the contact point (fingertip / pad / palm heel) is at (0, 0)
- * and the hand extends towards +y. Rotate with `angle` (degrees) and mirror with `flip`.
- * We see the back of the hand (nails visible), as when you look at someone touching their face.
+ * Reusable hand drawings (back of the hand visible, nails showing).
+ * Local frame: the contact point (fingertip / thumb pad / palm heel) is at (0, 0) and the hand
+ * extends towards +y, continuing into the wrist and forearm (which run off-stage).
+ * Rotate with `angle` (degrees); mirror with `flip`.
  */
 export type HandPose = 'four' | 'two' | 'index' | 'pinch' | 'thumb' | 'bunch' | 'palm';
 
-const FILL = 'var(--finger)';
+const FILL = 'url(#mh-skin)';
+const FLAT = 'var(--finger)';
 const LINE = 'var(--line)';
 
-/** One finger: tip at (x, y), extending along +y for length L (before the group's rotation). */
+/** A tapered finger: tip at (x, y), extending along +y for length L, then rotated by rot. */
 export function Finger({ x = 0, y = 0, L = 60, W = 13, rot = 0, nail = true }: { x?: number; y?: number; L?: number; W?: number; rot?: number; nail?: boolean }) {
   const r = W / 2;
+  const b = r * 1.14; // wider at the base
+  const d = `M${-r} ${r} A${r} ${r} 0 0 1 ${r} ${r} C${r * 1.04} ${L * 0.45} ${b} ${L * 0.7} ${b} ${L} L${-b} ${L} C${-b} ${L * 0.7} ${-r * 1.04} ${L * 0.45} ${-r} ${r} Z`;
   return (
     <g transform={`translate(${x} ${y}) rotate(${rot})`}>
-      <path d={`M${-r} ${r} A${r} ${r} 0 0 1 ${r} ${r} L${r * 1.06} ${L} L${-r * 1.06} ${L} Z`} fill={FILL} stroke={LINE} strokeWidth={1.2} strokeLinejoin="round" />
-      {/* soft side shading */}
-      <path d={`M${r * 0.55} ${r} L${r * 0.62} ${L}`} stroke={LINE} strokeOpacity={0.12} strokeWidth={W * 0.3} />
-      {nail && <rect x={-r * 0.62} y={1.6} width={r * 1.24} height={W * 0.85} rx={r * 0.6} fill="var(--nail)" stroke={LINE} strokeOpacity={0.35} strokeWidth={0.8} />}
-      <path d={`M${-r * 0.55} ${L * 0.38} q${r * 0.55} ${2.2} ${r * 1.1} 0`} fill="none" stroke={LINE} strokeOpacity={0.45} strokeWidth={0.9} />
-      <path d={`M${-r * 0.55} ${L * 0.7} q${r * 0.55} ${2.2} ${r * 1.1} 0`} fill="none" stroke={LINE} strokeOpacity={0.45} strokeWidth={0.9} />
+      <path d={d} fill={FILL} stroke={LINE} strokeWidth={1.1} strokeLinejoin="round" />
+      {nail && (
+        <>
+          <path d={`M${-r * 0.62} ${W * 0.95} L${-r * 0.62} ${r * 0.75} A${r * 0.62} ${r * 0.62} 0 0 1 ${r * 0.62} ${r * 0.75} L${r * 0.62} ${W * 0.95} Q0 ${W * 1.08} ${-r * 0.62} ${W * 0.95} Z`} fill="var(--nail)" stroke={LINE} strokeOpacity={0.35} strokeWidth={0.7} />
+          <path d={`M${-r * 0.4} ${W * 0.82} Q0 ${W * 0.7} ${r * 0.4} ${W * 0.82}`} fill="none" stroke="#fff" strokeOpacity={0.6} strokeWidth={0.8} />
+        </>
+      )}
+      {/* joint creases */}
+      <path d={`M${-r * 0.5} ${L * 0.36} q${r * 0.5} 1.6 ${r} 0`} fill="none" stroke={LINE} strokeOpacity={0.4} strokeWidth={0.8} />
+      <path d={`M${-r * 0.6} ${L * 0.66} q${r * 0.6} 2.2 ${r * 1.2} 0 M${-r * 0.45} ${L * 0.7} q${r * 0.45} 1.6 ${r * 0.9} 0`} fill="none" stroke={LINE} strokeOpacity={0.4} strokeWidth={0.8} />
     </g>
   );
 }
 
-/** Back of the hand / palm block that fingers join into. */
-function Palm({ x, y, w, h, r = 18 }: { x: number; y: number; w: number; h: number; r?: number }) {
-  return <rect x={x} y={y} width={w} height={h} rx={r} fill={FILL} stroke={LINE} strokeWidth={1.2} />;
-}
-
-/** Curled fingers seen from the back (a loose fist). */
-function Fist({ x, y, w = 44, h = 40 }: { x: number; y: number; w?: number; h?: number }) {
-  const bumps = 4;
+/**
+ * Back of the hand from the knuckle line (y = top) down through the wrist into the forearm.
+ * Drawn after the fingers so the knuckles overlap the finger bases cleanly.
+ */
+function HandBack({ top, w = 62, cx = 0, knuckles = 4 }: { top: number; w?: number; cx?: number; knuckles?: number }) {
+  const h = w / 2;
+  const wrist = top + w * 1.15;
+  const d = `M${cx - h} ${top + 4} Q${cx} ${top - 8} ${cx + h} ${top + 4} C${cx + h + 3} ${top + w * 0.6} ${cx + h * 0.82} ${wrist - 10} ${cx + h * 0.74} ${wrist} L${cx + h * 0.86} ${top + 320} L${cx - h * 0.86} ${top + 320} L${cx - h * 0.74} ${wrist} C${cx - h * 0.82} ${wrist - 10} ${cx - h - 3} ${top + w * 0.6} ${cx - h} ${top + 4} Z`;
   return (
     <g>
-      <rect x={x} y={y} width={w} height={h} rx={14} fill={FILL} stroke={LINE} strokeWidth={1.2} />
-      {Array.from({ length: bumps - 1 }, (_, i) => (
-        <path key={i} d={`M${x + ((i + 1) * w) / bumps} ${y + 2} l0 ${h * 0.45}`} stroke={LINE} strokeOpacity={0.35} strokeWidth={1} />
+      <path d={d} fill={FLAT} stroke={LINE} strokeWidth={1.2} />
+      {Array.from({ length: knuckles }, (_, i) => {
+        const kx = cx - h + ((i + 0.5) * w) / knuckles;
+        return (
+          <g key={i}>
+            <ellipse cx={kx} cy={top + 3} rx={w / knuckles / 2.6} ry={2.6} fill={LINE} opacity={0.08} />
+            <path d={`M${kx} ${top + 10} Q${(kx + cx) / 2} ${top + w * 0.55} ${cx + (kx - cx) * 0.3} ${wrist - 4}`} fill="none" stroke={LINE} strokeOpacity={0.12} strokeWidth={1.2} />
+          </g>
+        );
+      })}
+      <path d={`M${cx - h * 0.7} ${wrist + 6} q${h * 0.7} 4 ${h * 1.4} 0`} fill="none" stroke={LINE} strokeOpacity={0.25} strokeWidth={1} />
+    </g>
+  );
+}
+
+/** Curled fingers seen from the back: rounded knuckle bumps. */
+function CurledFingers({ x, y, n = 3, w = 13 }: { x: number; y: number; n?: number; w?: number }) {
+  return (
+    <g>
+      {Array.from({ length: n }, (_, i) => (
+        <rect key={i} x={x + i * w} y={y} width={w} height={w * 1.5} rx={w / 2} fill={FILL} stroke={LINE} strokeWidth={1.1} />
       ))}
     </g>
   );
 }
 
-function Fade({ id, from, to, children }: { id: string; from: number; to: number; children: ReactNode }) {
-  // Fades the wrist end so hands appear to come in from off-stage.
-  return (
-    <>
-      <defs>
-        <linearGradient id={`${id}-g`} x1="0" y1={from} x2="0" y2={to} gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="1" stopColor="#000" />
-        </linearGradient>
-        <mask id={`${id}-m`} maskUnits="userSpaceOnUse" x={-200} y={-200} width={400} height={500}>
-          <rect x={-200} y={-200} width={400} height={500} fill={`url(#${id}-g)`} />
-        </mask>
-      </defs>
-      <g mask={`url(#${id}-m)`}>{children}</g>
-    </>
-  );
-}
-
 interface HandProps {
   pose: HandPose;
-  /** Pinch: width of what is held between the pads when closed. */
-  gap?: number;
   /** Pinch: 0 = open, 1 = closed. */
   squeeze?: MotionValue<number>;
+  /** Pinch: width of what is held between the pads when closed. */
+  gap?: number;
   scale?: number;
 }
 
-/** A hand drawn in its local frame (contact at 0,0). Wrap it in a positioned/rotated group. */
+/** A hand drawn in its local frame (contact at 0,0). */
 export function HandShape({ pose, squeeze, scale = 1, gap = 4 }: HandProps) {
-  const id = useId().replace(/:/g, '');
   return (
     <g transform={`scale(${scale})`}>
       {pose === 'four' && (
-        <Fade id={id} from={80} to={150}>
-          <Palm x={-30} y={52} w={60} h={110} r={22} />
+        <g>
           {[
-            [-18.5, 7, 56],
-            [-6.2, 1, 62],
-            [6.2, 0, 63],
-            [18.5, 5, 57],
-          ].map(([x, y, L], i) => (
-            <Finger key={i} x={x} y={y} L={L} W={12.4} />
+            [-19, 9, 62, 12],
+            [-6.4, 1, 71, 13],
+            [6.4, 0, 72, 13],
+            [19, 6, 64, 12.5],
+          ].map(([x, y, L, W], i) => (
+            <Finger key={i} x={x} y={y} L={L} W={W} />
           ))}
-        </Fade>
+          <HandBack top={66} w={64} />
+        </g>
       )}
       {pose === 'two' && (
-        <Fade id={id} from={70} to={140}>
-          <Fist x={-16} y={56} w={46} h={44} />
-          <Palm x={-24} y={70} w={56} h={90} r={20} />
-          <Finger x={-6.5} y={0} L={66} W={13} />
-          <Finger x={6.5} y={2} L={64} W={13} />
-        </Fade>
+        <g>
+          <Finger x={-6.6} y={0} L={72} W={13} />
+          <Finger x={6.6} y={2} L={70} W={13} />
+          <CurledFingers x={13} y={58} n={2} w={13} />
+          <HandBack top={68} w={60} cx={6} />
+        </g>
       )}
       {pose === 'index' && (
-        <Fade id={id} from={75} to={145}>
-          <Palm x={-14} y={66} w={56} h={90} r={20} />
-          <Fist x={2} y={50} w={42} h={40} />
-          <Finger x={-15} y={60} L={40} W={15} rot={28} />
-          <Finger x={0} y={0} L={70} W={13.5} />
-        </Fade>
+        <g>
+          <Finger x={0} y={0} L={66} W={13.5} />
+          <CurledFingers x={7} y={52} n={3} w={13} />
+          <HandBack top={62} w={58} cx={16} />
+          <Finger x={-14} y={58} rot={24} L={42} W={15} />
+        </g>
       )}
       {pose === 'thumb' && (
-        <Fade id={id} from={60} to={130}>
-          <Palm x={-14} y={44} w={60} h={90} r={22} />
-          <Fist x={6} y={24} w={44} h={42} />
-          <Finger x={0} y={0} L={58} W={17} />
-        </Fade>
+        <g>
+          <CurledFingers x={8} y={22} n={4} w={13.5} />
+          <HandBack top={40} w={60} cx={34} />
+          <Finger x={0} y={0} L={74} W={17} rot={-8} />
+        </g>
       )}
       {pose === 'bunch' && (
-        <Fade id={id} from={72} to={140}>
-          <Palm x={-30} y={50} w={60} h={100} r={24} />
-          {/* five fingertips gathered into one point */}
+        <g>
           {[
-            [-5, 3, -16, 60, 12.5],
-            [5, 3, 16, 60, 12.5],
-            [-2.5, -2, -6, 64, 12.5],
-            [2.5, -2, 6, 64, 12.5],
-          ].map(([x, y, rot, L, W], i) => (
-            <Finger key={i} x={x} y={y} rot={-rot} L={L} W={W} />
+            [-5, 4, 16, 58],
+            [5, 4, -16, 58],
+            [-2.5, -1, 6, 64],
+            [2.5, -1, -6, 64],
+          ].map(([x, y, rot, L], i) => (
+            <Finger key={i} x={x} y={y} rot={rot} L={L} W={12.5} />
           ))}
-          <Finger x={-9} y={8} rot={30} L={48} W={15} />
-        </Fade>
+          <HandBack top={56} w={62} />
+          <Finger x={-8} y={8} rot={34} L={52} W={15} />
+        </g>
       )}
-      {pose === 'pinch' && <Pinch id={id} squeeze={squeeze} gap={gap} />}
+      {pose === 'pinch' && <Pinch squeeze={squeeze} gap={gap} />}
       {pose === 'palm' && (
         <g>
-          {/* heel of the palm at (0,0); palm and fingers extend along +y */}
-          <path d="M-30 -2 Q-36 30 -34 66 L34 66 Q36 30 30 -2 Q0 -14 -30 -2 Z" fill={FILL} stroke={LINE} strokeWidth={1.3} />
-          <path d="M-14 4 Q0 12 14 4" fill="none" stroke={LINE} strokeOpacity={0.35} strokeWidth={1} />
+          {/* heel of the palm at (0,0); back of the hand and fingers extend along +y */}
           {[
             [-24, 62, 50],
             [-8, 60, 58],
@@ -141,12 +144,13 @@ export function HandShape({ pose, squeeze, scale = 1, gap = 4 }: HandProps) {
             [24, 62, 52],
           ].map(([x, y, L], i) => (
             <g key={i} transform={`translate(${x} ${y + L}) rotate(180)`}>
-              <Finger L={L} W={14} />
+              <Finger L={L + 6} W={14} />
             </g>
           ))}
-          {/* thumb along the side */}
+          <path d="M-32 -2 Q-38 30 -34 66 Q0 74 34 66 Q38 30 32 -2 Q0 -14 -32 -2 Z" fill={FLAT} stroke={LINE} strokeWidth={1.3} />
+          <path d="M-20 60 Q-12 30 -8 8 M0 62 L0 8 M20 60 Q12 30 8 8" fill="none" stroke={LINE} strokeOpacity={0.12} strokeWidth={1.2} />
           <g transform="translate(-40 -30) rotate(-13)">
-            <Finger L={44} W={15} />
+            <Finger L={46} W={15} />
           </g>
         </g>
       )}
@@ -154,23 +158,22 @@ export function HandShape({ pose, squeeze, scale = 1, gap = 4 }: HandProps) {
   );
 }
 
-function Pinch({ id, squeeze, gap }: { id: string; squeeze?: MotionValue<number>; gap: number }) {
+function Pinch({ squeeze, gap }: { squeeze?: MotionValue<number>; gap: number }) {
   const zero = useMotionValue(0);
   const s = squeeze ?? zero;
-  // Index pad on the right of the target, thumb pad on the left; both open outwards when s = 0.
   const indexTf = useTransform(s, (v) => `translate(${gap / 2 + 6.5 + (1 - v) * 10} ${-4 - (1 - v) * 2}) rotate(${-(10 + (1 - v) * 12)})`);
-  const thumbTf = useTransform(s, (v) => `translate(${-gap / 2 - 8 - (1 - v) * 10} ${0}) rotate(${24 + (1 - v) * 10})`);
+  const thumbTf = useTransform(s, (v) => `translate(${-gap / 2 - 8 - (1 - v) * 10} 0) rotate(${24 + (1 - v) * 10})`);
   return (
-    <Fade id={id} from={86} to={150}>
-      <Palm x={-30} y={76} w={64} h={96} r={24} />
-      <Fist x={-4} y={64} w={40} h={36} />
+    <g>
       <TG t={indexTf}>
-        <Finger L={66} W={13} />
+        <Finger L={70} W={13} />
       </TG>
+      <CurledFingers x={gap / 2 + 4} y={58} n={3} w={13} />
+      <HandBack top={70} w={58} cx={gap / 2 + 14} />
       <TG t={thumbTf}>
-        <Finger L={52} W={16} />
+        <Finger L={58} W={16} />
       </TG>
-    </Fade>
+    </g>
   );
 }
 

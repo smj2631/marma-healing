@@ -33,6 +33,8 @@ export interface MarmaInfo {
 export interface RepGroup {
   name: string;
   count: number;
+  /** Spoken when this group starts. '' = say nothing. Omitted = "<unit> <n>. <name>." */
+  announce?: string;
   /** Spoken/displayed cues for the first and second half of each rep (e.g. inhale/exhale pairing). */
   cues?: [string, string];
 }

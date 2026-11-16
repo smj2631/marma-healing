@@ -59,12 +59,14 @@ export interface SpeakOpts {
   onEnd?: () => void;
   /** Called with each sentence as it starts (for subtitles). */
   onSentence?: (s: string) => void;
+  /** Speak sentence by sentence with pauses (scripts). false = one utterance (short cues, counts). */
+  split?: boolean;
 }
 
 let token = 0;
 const PAUSE_MS = 380;
 
-export function speak(text: string, { rate = 0.85, interrupt = true, onEnd, onSentence }: SpeakOpts = {}) {
+export function speak(text: string, { rate = 0.85, interrupt = true, onEnd, onSentence, split = true }: SpeakOpts = {}) {
   const my = ++token;
   if (!synth || !text) {
     onSentence?.(text);
@@ -73,7 +75,7 @@ export function speak(text: string, { rate = 0.85, interrupt = true, onEnd, onSe
   }
   if (interrupt) synth.cancel();
   // Speak sentence by sentence with a short breath in between: slower, calmer delivery.
-  const parts = text.match(/[^.!?]+[.!?]*/g)?.map((p) => p.trim()).filter(Boolean) ?? [text];
+  const parts = !split ? [text] : text.match(/[^.!?]+[.!?]*/g)?.map((p) => p.trim()).filter(Boolean) ?? [text];
   let i = 0;
   let finished = false;
   const done = () => {

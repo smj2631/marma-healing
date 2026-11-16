@@ -71,8 +71,8 @@ function Arrow({ x, y, dir, opacity }: { x: number; y: number; dir: 'left' | 'ri
 // ---------- Steps 6 & 7: four-finger strokes ----------
 // Just below the brow line (brows sit at y ≈ 142–152).
 const BROW = { p0: { x: 134, y: 160 }, c: { x: 111, y: 152 }, p1: { x: 86, y: 160 } };
-// On the bony rim under the eye, clear of the eye itself (lower lid ≈ y 195).
-const UNDER = { p0: { x: 132, y: 213 }, c: { x: 110, y: 224 }, p1: { x: 86, y: 210 } };
+// On the bony rim just under the eye (lower lid ≈ y 190).
+const UNDER = { p0: { x: 131, y: 200 }, c: { x: 110, y: 210 }, p1: { x: 89, y: 199 } };
 
 function Stroke({
   phase,
@@ -116,7 +116,7 @@ function Stroke({
 }
 
 export const BrowStroke = (p: AnimProps) => (
-  <Stroke {...p} path={BROW} angle={172} label="Closed eyes. Four fingertips glide just below the eyebrows from inner to outer end." caption="Inside → outside · both sides" />
+  <Stroke {...p} path={BROW} angle={14} label="Closed eyes. Four fingertips glide just below the eyebrows from inner to outer end." caption="Inside → outside · both sides" />
 );
 export const UnderEyeStroke = (p: AnimProps) => (
   <Stroke {...p} path={UNDER} angle={14} label="Closed eyes. Four fingertips glide along the bony rim under the eyes, away from the eyeball." caption="On the bone · never the eyeball" />
@@ -143,7 +143,7 @@ function ThreePoints({
     const m = MARMA[keys[Math.max(0, Math.min(2, a))]];
     return tf(m.x, m.y + o, angle, 0.62);
   });
-  const hand = <Hand t={thumbTf} pose="thumb" />;
+  const hand = <Hand t={thumbTf} pose="thumb" flip />;
   return (
     <Stage label={label}>
       <FaceFront closed />
@@ -176,7 +176,7 @@ function PointPair({ pKey, index, active, reduced, labelDy }: { pKey: ThreeKey; 
 }
 
 export const BrowPoints = (p: AnimProps) => (
-  <ThreePoints {...p} keys={['bhruhAntara', 'bhruhMadhya', 'bhruhAgra']} pull={-6} angle={160} label="Three numbered points on each eyebrow. The thumbs pull and release at the active point." />
+  <ThreePoints {...p} keys={['bhruhAntara', 'bhruhMadhya', 'bhruhAgra']} pull={-6} angle={12} label="Three numbered points on each eyebrow. The thumbs pull and release at the active point." />
 );
 export const UnderEyePoints = (p: AnimProps) => (
   <ThreePoints {...p} keys={['ashruAntara', 'ashruMadhya', 'ashruAgra']} pull={5} labelDy={-9} angle={22} label="Three points on the bone below each eye. The thumbs pull and release at the active point." />
@@ -188,9 +188,9 @@ export function Kaninaka({ phase, reps, reduced }: AnimProps) {
   const k = MARMA.kaninaka;
   const hand = useTransform(t, (v) => {
     const o = reduced ? 0 : Math.sin(Math.PI * seg(v, 0.05, 0.7)) * 4;
-    return tf(k.x + 1 - o * 0.3, k.y + 2 + o, 8, 0.6);
+    return tf(k.x + 1 - o * 0.3, k.y + 2 + o, -4, 0.6);
   });
-  const h = <Hand t={hand} pose="index" />;
+  const h = <Hand t={hand} pose="index" flip />;
   return (
     <Stage label="Closed eyes. An index fingertip at the inner corner of each eye pulls gently and releases.">
       <FaceFront closed />
@@ -282,7 +282,7 @@ export function NasaMulaPinch({ phase, reps, reduced }: AnimProps) {
 
 // ---------- Step 13: Cheekbones ----------
 // Along the zygomatic bone: from below the outer eye, up and out towards the temple. Well above the mouth.
-const CHEEK = { p0: { x: 104, y: 226 }, c: { x: 84, y: 222 }, p1: { x: 68, y: 202 } };
+const CHEEK = { p0: { x: 97, y: 242 }, c: { x: 94, y: 226 }, p1: { x: 91, y: 210 } };
 export function Cheekbones({ phase, reps, reduced }: AnimProps) {
   const t = useRepT(phase, reps);
   const u = useTransform(t, (v) => (reduced ? 0.5 : ease(seg(v, 0.05, 0.75))));
@@ -291,7 +291,7 @@ export function Cheekbones({ phase, reps, reduced }: AnimProps) {
     const back = tt > 0.78 ? ease(seg(tt, 0.78, 1)) : 0;
     const lift = tt > 0.78 ? Math.sin(Math.PI * seg(tt, 0.78, 1)) : 0;
     const p = at(lerp(v, 0, back));
-    return tf(p.x + lift * 3, p.y + lift * 6, 28, 0.62);
+    return tf(p.x, p.y + lift * 6, 10, 0.62);
   });
   const trail = useTransform(u, (v) => partialPath(at, v));
   const side = (
@@ -299,7 +299,7 @@ export function Cheekbones({ phase, reps, reduced }: AnimProps) {
       <path d={partialPath(at, 1)} fill="none" stroke="var(--glow)" strokeWidth={2} strokeDasharray="3 5" opacity={0.6} />
       <motion.path d={trail} fill="none" stroke="var(--glow)" strokeWidth={9} strokeLinecap="round" opacity={0.8} filter="url(#mh-soft)" />
       <Hand t={hand} pose="two" />
-      <path d="M44 226 L44 194 M35 203 L44 192 L53 203" fill="none" stroke="var(--glow)" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M60 240 L60 206 M51 215 L60 204 L69 215" fill="none" stroke="var(--glow)" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round" />
     </g>
   );
   return (
