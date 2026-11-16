@@ -317,12 +317,12 @@ export function Cheekbones({ phase, reps, reduced }: AnimProps) {
 // ---------- Step 14: Palming — base (heel) of the palms over the eyes ----------
 export function Palming({ phase, reps, reduced }: AnimProps) {
   const t = useRepT(phase, reps);
-  const cup = useTransform(phase, (p) => (reduced ? 1 : ease(seg(p, 0, 0.4))));
+  const cup = useTransform(phase, (p) => (reduced ? 1 : ease(seg(p, 0, 0.18))));
   const breath = useTransform(t, (v) => (v < 0.5 ? ease(v * 2) : 1 - ease((v - 0.5) * 2)));
   const glowR = useTransform(breath, (b) => 30 + b * 22);
   const glowO = useTransform([breath, cup], ([b, c]: number[]) => c * (0.35 + b * 0.5));
   // Heel of the palm rests on the closed eye; fingers point up over the forehead, leaning inwards.
-  const palm = useTransform(cup, (c) => tf(lerp(40, 111, c), lerp(300, 186, c), 191, 0.82));
+  const palm = useTransform(cup, (c) => tf(lerp(60, 112, c), lerp(330, 190, c), 189, 0.95));
   const label = useTransform(t, (v): string => (v < 0.5 ? 'Inhale' : 'Exhale'));
   const side = (
     <g>

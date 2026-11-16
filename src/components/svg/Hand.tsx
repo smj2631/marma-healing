@@ -136,7 +136,9 @@ export function HandShape({ pose, squeeze, scale = 1, gap = 4 }: HandProps) {
       {pose === 'pinch' && <Pinch squeeze={squeeze} gap={gap} />}
       {pose === 'palm' && (
         <g>
-          {/* heel of the palm at (0,0); back of the hand and fingers extend along +y */}
+          {/* heel of the palm at (0,0); the hand rises along +y; wrist + forearm continue along -y */}
+          <path d="M-22 -4 L-26 -240 L26 -240 L22 -4 Z" fill={FLAT} stroke={LINE} strokeWidth={1.2} />
+          <path d="M-16 -16 q16 5 32 0" fill="none" stroke={LINE} strokeOpacity={0.3} strokeWidth={1} />
           {[
             [-24, 62, 50],
             [-8, 60, 58],
@@ -147,10 +149,10 @@ export function HandShape({ pose, squeeze, scale = 1, gap = 4 }: HandProps) {
               <Finger L={L + 6} W={14} />
             </g>
           ))}
-          <path d="M-32 -2 Q-38 30 -34 66 Q0 74 34 66 Q38 30 32 -2 Q0 -14 -32 -2 Z" fill={FLAT} stroke={LINE} strokeWidth={1.3} />
+          <path d="M-26 2 C-30 -8 -20 -16 -10 -12 Q0 -8 10 -12 C20 -16 30 -8 26 2 C32 24 36 46 34 66 Q0 74 -34 66 C-36 46 -32 24 -26 2 Z" fill={FLAT} stroke={LINE} strokeWidth={1.3} />
           <path d="M-20 60 Q-12 30 -8 8 M0 62 L0 8 M20 60 Q12 30 8 8" fill="none" stroke={LINE} strokeOpacity={0.12} strokeWidth={1.2} />
-          <g transform="translate(-40 -30) rotate(-13)">
-            <Finger L={46} W={15} />
+          <g transform="translate(-34 -8) rotate(-30)">
+            <Finger L={34} W={14} />
           </g>
         </g>
       )}
