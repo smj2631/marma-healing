@@ -57,120 +57,91 @@ export const completeChime = () => {
   bell(792, 0.7, 3, 0.12);
 };
 
-// ---------- Relaxing background music (generated live, works offline) ----------
-// Slow warm pad chords (D – Bm – G – A) with sparse, soft pentatonic bell notes, through a gentle reverb.
-const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
-const CHORDS = [
-  [50, 57, 62, 66, 69], // D
-  [47, 54, 59, 62, 66], // Bm
-  [43, 50, 55, 59, 62], // G
-  [45, 52, 57, 61, 64], // A
-];
-const MELODY = [62, 64, 66, 69, 71, 74, 76, 78]; // D major pentatonic
-const CHORD_SEC = 9;
+// ---------- Relaxing background music ----------
+// A pre-rendered, seamlessly looping track (soft chords + bell notes) played through an <audio> element.
+// An <audio> element (unlike Web Audio) still plays on iPhone when the ring/silent switch is on, and the
+// track sits in a range phone speakers can actually reproduce.
+let musicEl: HTMLAudioElement | null = null;
+let fadeTimer = 0;
+const MUSIC_VOL = 0.55;
 
-let music: { master: GainNode; bus: GainNode; timer: number; nextChord: number; nextNote: number; chord: number } | null = null;
+const MUSIC_URL = import.meta.env.BASE_URL + 'media/calm-music.m4a';
+let musicBlobUrl: string | null = null;
 
-function makeReverb(c: AudioContext) {
-  const len = Math.floor(c.sampleRate * 3.2);
-  const buf = c.createBuffer(2, len, c.sampleRate);
-  for (let ch = 0; ch < 2; ch++) {
-    const d = buf.getChannelData(ch);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 2.6;
+/**
+ * Load the track into memory ahead of time. Playing from a blob URL avoids Safari's need for byte-range
+ * responses, which the offline cache does not serve.
+ */
+export function preloadMusic() {
+  if (musicBlobUrl) return;
+  fetch(MUSIC_URL)
+    .then((r) => (r.ok ? r.blob() : Promise.reject()))
+    .then((b) => {
+      musicBlobUrl = URL.createObjectURL(b);
+      if (musicEl && musicEl.paused) musicEl.src = musicBlobUrl;
+    })
+    .catch(() => {});
+}
+
+function musicElement() {
+  if (!musicEl) {
+    musicEl = new Audio(musicBlobUrl ?? MUSIC_URL);
+    musicEl.loop = true;
+    musicEl.preload = 'auto';
+    musicEl.setAttribute('playsinline', '');
   }
-  const conv = c.createConvolver();
-  conv.buffer = buf;
-  return conv;
+  return musicEl;
 }
 
-function padChord(c: AudioContext, out: AudioNode, notes: number[], t: number) {
-  const dur = CHORD_SEC + 4;
-  notes.forEach((n, i) => {
-    for (const [type, det, g] of [
-      ['sine', 0, 0.06],
-      ['triangle', 6, 0.025],
-    ] as const) {
-      const o = c.createOscillator();
-      o.type = type;
-      o.frequency.value = midi(n);
-      o.detune.value = det * (i % 2 ? 1 : -1);
-      const gain = c.createGain();
-      const peak = g * (i === 0 ? 1.2 : 0.8);
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(peak, t + 3.5);
-      gain.gain.setValueAtTime(peak, t + dur - 4.5);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(gain).connect(out);
-      o.start(t);
-      o.stop(t + dur + 0.1);
+function fadeTo(el: HTMLAudioElement, target: number, ms: number, done?: () => void) {
+  clearInterval(fadeTimer);
+  const start = el.volume;
+  const t0 = performance.now();
+  fadeTimer = window.setInterval(() => {
+    const k = Math.min(1, (performance.now() - t0) / ms);
+    try {
+      el.volume = start + (target - start) * k;
+    } catch {
+      /* iOS: volume is read-only */
     }
-  });
+    if (k >= 1) {
+      clearInterval(fadeTimer);
+      done?.();
+    }
+  }, 50);
 }
 
-function softBell(c: AudioContext, out: AudioNode, n: number, t: number) {
-  const o = c.createOscillator();
-  o.type = 'sine';
-  o.frequency.value = midi(n);
-  const o2 = c.createOscillator();
-  o2.type = 'sine';
-  o2.frequency.value = midi(n) * 2.0;
-  const g = c.createGain();
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.05, t + 0.06);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 4);
-  const g2 = c.createGain();
-  g2.gain.value = 0.15;
-  o.connect(g).connect(out);
-  o2.connect(g2).connect(g);
-  o.start(t);
-  o2.start(t);
-  o.stop(t + 4.1);
-  o2.stop(t + 4.1);
+/** Call from a user gesture once so mobile browsers allow later playback. */
+export function primeMusic() {
+  const el = musicElement();
+  if (!el.paused) return;
+  el.volume = 0;
+  el.play()
+    .then(() => {
+      if (el.dataset.on !== '1') el.pause();
+    })
+    .catch(() => {});
 }
 
 export function startAmbient() {
-  const c = getCtx();
-  if (!c || music) return;
-  const master = c.createGain();
-  master.gain.setValueAtTime(0.0001, c.currentTime);
-  master.gain.exponentialRampToValueAtTime(0.3, c.currentTime + 6);
-  const lp = c.createBiquadFilter();
-  lp.type = 'lowpass';
-  lp.frequency.value = 2200;
-  const bus = c.createGain();
-  const reverb = makeReverb(c);
-  const wet = c.createGain();
-  wet.gain.value = 0.6;
-  const dry = c.createGain();
-  dry.gain.value = 0.55;
-  bus.connect(dry).connect(lp);
-  bus.connect(reverb).connect(wet).connect(lp);
-  lp.connect(master).connect(c.destination);
-  const m = { master, bus, timer: 0, nextChord: c.currentTime + 0.1, nextNote: c.currentTime + 4, chord: 0 };
-  // Look-ahead scheduler.
-  m.timer = window.setInterval(() => {
-    const now = c.currentTime;
-    while (m.nextChord < now + 2) {
-      padChord(c, bus, CHORDS[m.chord % CHORDS.length], m.nextChord);
-      m.chord++;
-      m.nextChord += CHORD_SEC;
-    }
-    while (m.nextNote < now + 2) {
-      if (Math.random() < 0.55) softBell(c, bus, MELODY[Math.floor(Math.random() * MELODY.length)], m.nextNote);
-      m.nextNote += 2.6 + Math.random() * 2.8;
-    }
-  }, 500);
-  music = m;
+  const el = musicElement();
+  if (!el.paused && el.dataset.on === '1') return;
+  el.dataset.on = '1';
+  try {
+    el.volume = 0;
+  } catch {
+    /* ignore */
+  }
+  el.play()
+    .then(() => fadeTo(el, MUSIC_VOL, 2500))
+    .catch(() => {});
 }
 
 export function stopAmbient() {
-  const c = getCtx();
-  if (!c || !music) return;
-  const m = music;
-  music = null;
-  clearInterval(m.timer);
-  m.master.gain.cancelScheduledValues(c.currentTime);
-  m.master.gain.setValueAtTime(Math.max(m.master.gain.value, 0.0001), c.currentTime);
-  m.master.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 2);
-  setTimeout(() => m.master.disconnect(), 2300);
+  const el = musicEl;
+  if (!el || el.dataset.on !== '1') return;
+  el.dataset.on = '0';
+  fadeTo(el, 0, 1200, () => {
+    if (el.dataset.on !== '1') el.pause();
+  });
 }

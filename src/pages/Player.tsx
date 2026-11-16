@@ -9,7 +9,7 @@ import { MarmaChip } from '../components/MarmaChip';
 import { RepCounter } from '../components/RepCounter';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { Sheet } from '../components/Sheet';
-import { completeChime, repChime, startAmbient, stepChime, stopAmbient, unlockAudio } from '../lib/audio';
+import { completeChime, preloadMusic, primeMusic, repChime, startAmbient, stepChime, stopAmbient, unlockAudio } from '../lib/audio';
 import { keepAwake, vibrate } from '../lib/device';
 import { useRepClock } from '../lib/repClock';
 import { tempoFactor, useSettings } from '../lib/settings';
@@ -45,6 +45,7 @@ export function Player({ protocol, mode, stepNumber }: Props) {
   const [countdown, setCountdown] = useState(GET_READY_SEC);
   const [showSettings, setShowSettings] = useState(false);
   const [showDemo, setShowDemo] = useState(false);
+  useEffect(() => preloadMusic(), []);
   const [showDetails, setShowDetails] = useState(false);
   const [resume] = useState(() => (mode === 'guided' ? getProgress(protocol.id) : null));
   const startedAt = useRef(Date.now());
@@ -320,6 +321,7 @@ export function Player({ protocol, mode, stepNumber }: Props) {
 
   const begin = (fromIndex: number) => {
     unlockAudio();
+    primeMusic();
     unlockSpeech(settings.voiceRate);
     keepAwake(true);
     startedAt.current = Date.now();
@@ -437,7 +439,10 @@ export function Player({ protocol, mode, stepNumber }: Props) {
             />
           </div>
         </div>
-        <button className="icon-btn" aria-label={settings.ambient ? 'Turn background music off' : 'Turn background music on'} aria-pressed={settings.ambient} onClick={() => update({ ambient: !settings.ambient })}>
+        <button className="icon-btn" aria-label={settings.ambient ? 'Turn background music off' : 'Turn background music on'} aria-pressed={settings.ambient} onClick={() => {
+            if (!settings.ambient) primeMusic();
+            update({ ambient: !settings.ambient });
+          }}>
           <MusicIcon off={!settings.ambient} />
         </button>
         <button className="icon-btn" aria-label="Settings" onClick={() => setShowSettings(true)}>
@@ -602,16 +607,7 @@ export function Player({ protocol, mode, stepNumber }: Props) {
       {step?.demoVideo && (
         <Sheet open={showDemo} onClose={() => setShowDemo(false)} title={`Step ${step.number}: ${step.title} · real demo`}>
           {showDemo && (
-            <video
-              src={import.meta.env.BASE_URL + step.demoVideo}
-              poster={import.meta.env.BASE_URL + step.demoVideo.replace(/\.mp4$/, '.jpg')}
-              className="mx-auto max-h-[60vh] rounded-2xl"
-              autoPlay
-              muted
-              loop
-              playsInline
-              controls
-            />
+<DemoVideo src={step.demoVideo} />
           )}
           <p className="mt-3 text-sm opacity-70">Clasp, open the palm, then the thumb finds the point and presses gently.</p>
         </Sheet>
@@ -712,8 +708,39 @@ function MusicIcon({ off }: { off?: boolean }) {
 function MusicToggle() {
   const { settings, update } = useSettings();
   return (
-    <button className="icon-btn" aria-label={settings.ambient ? 'Turn background music off' : 'Turn background music on'} aria-pressed={settings.ambient} onClick={() => update({ ambient: !settings.ambient })}>
+    <button className="icon-btn" aria-label={settings.ambient ? 'Turn background music off' : 'Turn background music on'} aria-pressed={settings.ambient} onClick={() => {
+            if (!settings.ambient) primeMusic();
+            update({ ambient: !settings.ambient });
+          }}>
       <MusicIcon off={!settings.ambient} />
     </button>
+  );
+}
+
+/** Plays a short clip from memory (works offline on Safari, which needs byte ranges for streamed media). */
+function DemoVideo({ src }: { src: string }) {
+  const url = import.meta.env.BASE_URL + src;
+  const [blob, setBlob] = useState<string | null>(null);
+  useEffect(() => {
+    let u: string | null = null;
+    fetch(url)
+      .then((r) => (r.ok ? r.blob() : Promise.reject()))
+      .then((b) => setBlob((u = URL.createObjectURL(b))))
+      .catch(() => setBlob(url));
+    return () => {
+      if (u) URL.revokeObjectURL(u);
+    };
+  }, [url]);
+  return (
+    <video
+      src={blob ?? undefined}
+      poster={url.replace(/\.mp4$/, '.jpg')}
+      className="mx-auto max-h-[60vh] rounded-2xl"
+      autoPlay
+      muted
+      loop
+      playsInline
+      controls
+    />
   );
 }
