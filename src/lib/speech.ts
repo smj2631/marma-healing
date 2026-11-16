@@ -1,6 +1,5 @@
 /** Web Speech API wrapper: picks the calmest available voice, speaks sentence by sentence with soft pauses. */
 const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined;
-let chosenURI = '';
 let auto: SpeechSynthesisVoice | null = null;
 const listeners = new Set<() => void>();
 
@@ -21,7 +20,9 @@ function score(v: SpeechSynthesisVoice) {
   if (gender === 'male') s += isMale ? 60 : isFemale ? -40 : 0;
   else s += isFemale ? 60 : isMale ? -40 : 0;
   if (/google uk english/.test(n)) s += 8;
-  if (v.lang === 'en-IN' || v.lang === 'en-GB') s += 6;
+  // Female voice: always Indian English when the phone has it.
+  if (v.lang.replace('_', '-').toLowerCase() === 'en-in') s += 200;
+  else if (v.lang === 'en-GB') s += 6;
   if (v.localService) s += 2; // works offline
   if (/novelty|whisper|bad news|bells|boing|bubbles|cellos|jester|organ|trinoids|zarvox|albert|junior|ralph|grandpa|grandma|rocko|shelley|superstar|eddy|reed|sandy|flo/.test(n)) s -= 120;
   return s;
@@ -60,12 +61,11 @@ export function onVoicesChanged(l: () => void) {
   listeners.add(l);
   return () => void listeners.delete(l);
 }
-export function setVoiceURI(uri: string) {
-  chosenURI = uri;
-}
+/** Kept for compatibility: the voice is now chosen automatically. */
+export function setVoiceURI(_uri: string) {}
 function currentVoice() {
   if (!synth) return null;
-  return (chosenURI && synth.getVoices().find((v) => v.voiceURI === chosenURI)) || auto;
+  return auto;
 }
 
 // ---------- Recorded male voice (bundled clips, same on every phone, works offline) ----------
