@@ -37,26 +37,27 @@ export const eyeProtocol: Protocol = {
       marma: {
         name: 'Kurcha',
         location: 'On the palm, the soft fleshy mound at the base of the thumb.',
-        note: 'Traditionally linked to eyesight. Interlocking your fingers brings the other thumb right onto this point.',
+        note: 'Traditionally linked to eyesight. Clasping your hands brings the other thumb right onto this point.',
       },
       posture: 'sitting',
       eyes: 'open',
-      shortInstruction: 'Interlock your fingers. Gently press the Kurcha point with your thumb, 7 times. Then switch hands.',
+      shortInstruction: 'Clasp your hands, open the left palm and gently press the Kurcha point with your right thumb, 7 times. Then switch hands.',
       instruction:
-        'Interlock the fingers of both hands. Your right thumb now rests on the Kurcha point of your left hand: the soft mound at the base of the left thumb, on the palm side. Gently press and release, 7 times. Then switch: press the Kurcha point of your right hand with your left thumb, 7 times. Normal breath.',
+        'Clasp both hands together. Now open the left palm towards you while the right hand stays wrapped around it: the right fingers behind the left hand, the right thumb lying across the left palm. Where the thumb lands, at the base of the left thumb mound, is the Kurcha point. Gently press and release, 7 times. Then switch: open the right palm and press with the left thumb, 7 times. Normal breath.',
       reps: 14,
       breath: 'normal',
       pattern: {
         unit: 'Hand',
         groups: [
           { name: 'Left hand', count: 7, announce: 'Left hand.' },
-          { name: 'Right hand', count: 7, announce: 'Now switch. Left thumb on the right hand.' },
+          { name: 'Right hand', count: 7, announce: 'Now switch. Open the right palm, and press with the left thumb.' },
         ],
       },
       tempoSec: 3.5,
       animationKey: 'kurchaPinch',
+      demoVideo: 'media/kurcha-demo.mp4',
       voiceScript:
-        'Step one. Kurcha marma. Interlock the fingers of both hands. Let your right thumb rest on the soft mound at the base of your left thumb. Gently press and release, seven times. Then we will switch hands.',
+        'Step one. Kurcha marma. Clasp both hands together. Now open your left palm, keeping your right hand wrapped around it. Your right thumb rests at the base of your left thumb mound. Gently press and release, seven times. Then we will switch hands.',
     },
     {
       id: 'vidhura',

@@ -68,6 +68,8 @@ export interface Step {
   /** Seconds per rep at "normal" tempo. Scaled by the tempo setting. */
   tempoSec: number;
   animationKey: AnimationKey;
+  /** Optional short real-life demo clip (path under public/), shown in practice mode. */
+  demoVideo?: string;
   /** What the voice says before the reps begin. */
   voiceScript: string;
   /** Points visited in order, one per rep (repeats). Spoken and shown instead of a count. */

@@ -5,37 +5,76 @@ import { HeadSide } from '../components/svg/HeadSide';
 import { TG, Caption, MarmaDot, Mirror, Stage, ease, seg, tf, useRepT } from '../components/svg/primitives';
 import { groupOfIndex, phaseInfo } from '../lib/timeline';
 import { useState } from 'react';
-import { Hand, HandShape } from '../components/svg/Hand';
+import { Finger, Hand, HandShape } from '../components/svg/Hand';
 import { MARMA } from '../data/marmaPoints';
 
 /**
- * Step 1 — fingers interlocked; the other hand's thumb rests on the Kurcha point and presses gently.
- * First 7 reps: right thumb on the left palm. Next 7: everything mirrors (left thumb on the right palm).
+ * The pressing hand, as in the reference video: it comes from below, its fingers wrap behind the
+ * other hand and peek out at the little-finger edge, and the thumb lies up across the palm with its pad on the point.
+ * Local frame: thumb pad at (0, 0). `part` picks the layer (fingers go behind the palm, thumb + hand in front).
+ */
+function PressHand({ part }: { part: 'behind' | 'front' }) {
+  if (part === 'behind')
+    return (
+      <g>
+        {[
+          [-100, -40, -58, 66],
+          [-108, -16, -62, 70],
+          [-110, 8, -66, 68],
+          [-104, 30, -70, 60],
+        ].map(([x, y, rot, L], i) => (
+          <Finger key={i} x={x} y={y} rot={rot} L={L} W={13} nail={false} />
+        ))}
+      </g>
+    );
+  return (
+    <g>
+      {/* side of the hand (index edge) + wrist, running off the bottom of the stage */}
+      <path d="M-96 14 C-88 30 -80 44 -76 62 C-74 92 -70 118 -54 150 L-48 280 L30 280 L24 156 C30 128 24 104 8 84 C-6 66 -40 48 -96 14 Z" fill="var(--finger)" stroke="var(--line)" strokeWidth={1.2} />
+      <path d="M-74 64 C-60 74 -48 80 -34 84" fill="none" stroke="var(--line)" strokeOpacity={0.3} strokeWidth={1.1} />
+      <path d="M-46 162 q34 6 68 0" fill="none" stroke="var(--line)" strokeOpacity={0.25} strokeWidth={1} />
+      {/* thumb, nail towards you, lying up across the palm */}
+      <Finger x={0} y={0} L={96} W={21} rot={20} />
+    </g>
+  );
+}
+
+/**
+ * Step 1 — as in the reference video: clasp the hands, open the left palm while the right hand stays wrapped
+ * around it; the right thumb rests on the Kurcha point and presses gently. First 7 reps on the left hand,
+ * then everything mirrors for the right hand.
  */
 export function KurchaPinch({ phase, reps, step, reduced }: AnimProps) {
   const t = useRepT(phase, reps);
   const [side, setSide] = useState(0);
   useMotionValueEvent(phase, 'change', (p) => setSide(groupOfIndex(step?.pattern, phaseInfo(p, reps).idx)));
-  const settle = useTransform(phase, (p) => ease(seg(p - (side === 1 ? (step?.pattern?.groups[0].count ?? 7) : 0), 0, 0.3)));
-  const press = useTransform(t, (v) => (reduced ? 0.6 : Math.sin(Math.PI * seg(v, 0.08, 0.6))));
+  // "Find the point": at the start of each hand the pressing hand slides up from below and settles.
+  const settle = useTransform(phase, (p) => (reduced ? 1 : ease(seg(p - (side === 1 ? (step?.pattern?.groups[0].count ?? 7) : 0), 0, 0.45))));
+  const press = useTransform([t, settle], ([v, st]: number[]) => (reduced ? 0.6 : st < 1 ? 0 : Math.sin(Math.PI * seg(v, 0.12, 0.62))));
   const K = MARMA.kurcha;
-  // The pressing hand comes from the lower right; its thumb pad sits on the mound.
-  const thumbTf = useTransform([press, settle], ([pr, st]: number[]) => tf(K.x + 6 - pr * 3 + (1 - st) * 40, K.y - 4 + pr * 2 + (1 - st) * 50, -42, 0.95));
+  const handTf = useTransform([press, settle], ([pr, st]: number[]) => tf(K.x - pr * 2 - (1 - st) * 20, K.y - pr * 3 + (1 - st) * 120, 0, 1));
   const ringR = useTransform(press, (v) => 10 + v * 14);
   const ringO = useTransform(press, (v) => v * 0.9);
+  const findO = useTransform(settle, [0.85, 1], [0, 1]);
   const scene = (
     <g transform="translate(-30 0)">
+      <TG t={handTf}>
+        <PressHand part="behind" />
+      </TG>
       <LeftHand />
-      <motion.circle cx={K.x} cy={K.y} r={ringR} fill="none" stroke="var(--glow)" strokeWidth={2.5} opacity={reduced ? 0 : ringO} />
       <MarmaDot x={K.x} y={K.y} r={10} reduced={reduced} />
-      <Hand t={thumbTf} pose="thumb" />
+      <TG t={handTf}>
+        <PressHand part="front" />
+      </TG>
+      <motion.circle cx={K.x} cy={K.y} r={ringR} fill="none" stroke="var(--glow)" strokeWidth={2.5} opacity={reduced ? 0 : ringO} />
+      <motion.circle cx={K.x} cy={K.y} r={7} fill="var(--glow)" opacity={findO} />
     </g>
   );
   return (
-    <Stage label="Fingers interlocked. The other hand's thumb rests on the Kurcha point, the soft mound at the base of the thumb, and presses gently.">
+    <Stage label="Hands clasped, then the left palm opens while the right hand stays wrapped around it. The right fingers are behind the left hand and the right thumb rests on the Kurcha point, pressing gently.">
       {side === 0 ? scene : <Mirror>{scene}</Mirror>}
       <Caption x={150} y={36} size={12}>{side === 0 ? 'Left hand · right thumb presses' : 'Right hand · left thumb presses'}</Caption>
-      <text x={side === 0 ? K.x - 30 : 300 - K.x + 30} y={K.y + 34} textAnchor="middle" className="fill-[var(--ink)] text-[11px] font-semibold">
+      <text x={side === 0 ? K.x + 6 : 300 - K.x - 6} y={K.y - 22} textAnchor="middle" className="fill-[var(--ink)] text-[11px] font-semibold">
         Kurcha
       </text>
     </Stage>

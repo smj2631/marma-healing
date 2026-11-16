@@ -44,6 +44,7 @@ export function Player({ protocol, mode, stepNumber }: Props) {
   const [runId, setRunId] = useState(0);
   const [countdown, setCountdown] = useState(GET_READY_SEC);
   const [showSettings, setShowSettings] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [resume] = useState(() => (mode === 'guided' ? getProgress(protocol.id) : null));
   const startedAt = useRef(Date.now());
@@ -529,6 +530,11 @@ export function Player({ protocol, mode, stepNumber }: Props) {
                 Full instruction
               </button>
             )}
+            {mode === 'learn' && step.demoVideo && (
+              <button className="ml-2 font-semibold text-teal-600 underline dark:text-saffron-300" onClick={() => setShowDemo(true)}>
+                Watch real demo
+              </button>
+            )}
           </p>
           <div className="mt-1 flex flex-wrap gap-x-3 text-xs font-semibold uppercase tracking-wider opacity-60">
             <span>{step.posture === 'lying' ? 'Lying down' : 'Sitting'}</span>
@@ -593,6 +599,23 @@ export function Player({ protocol, mode, stepNumber }: Props) {
       </nav>
 
       <SettingsSheet open={showSettings} onClose={() => setShowSettings(false)} />
+      {step?.demoVideo && (
+        <Sheet open={showDemo} onClose={() => setShowDemo(false)} title={`Step ${step.number}: ${step.title} · real demo`}>
+          {showDemo && (
+            <video
+              src={import.meta.env.BASE_URL + step.demoVideo}
+              poster={import.meta.env.BASE_URL + step.demoVideo.replace(/\.mp4$/, '.jpg')}
+              className="mx-auto max-h-[60vh] rounded-2xl"
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+            />
+          )}
+          <p className="mt-3 text-sm opacity-70">Clasp, open the palm, then the thumb finds the point and presses gently.</p>
+        </Sheet>
+      )}
       {step && (
         <Sheet open={showDetails} onClose={() => setShowDetails(false)} title={`Step ${step.number}: ${step.title}`}>
           <p className="text-lg leading-relaxed">{step.instruction}</p>
