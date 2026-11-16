@@ -1,3 +1,4 @@
+import type { VoiceGender } from '../lib/speech';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useSettings, type Tempo, type Theme, TEMPO_SECONDS } from '../lib/settings';
 import { listVoices, onVoicesChanged, speak, speechSupported } from '../lib/speech';
@@ -56,6 +57,20 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
     <Sheet open={open} onClose={onClose} title="Settings">
       <Row label="Voice guidance" hint={speechSupported() ? 'Reads each step and counts reps' : 'Not supported in this browser'}>
         <Toggle label="Voice guidance" on={s.voice} onChange={(v) => update({ voice: v })} />
+      </Row>
+      <Row label="Voice style" hint="Uses the best matching voice on your device">
+        <Segmented<VoiceGender>
+          label="Voice style"
+          value={s.voiceGender}
+          options={[
+            { v: 'male', l: 'Male' },
+            { v: 'female', l: 'Female' },
+          ]}
+          onChange={(v) => {
+            update({ voiceGender: v, voiceURI: '' });
+            setTimeout(preview, 80);
+          }}
+        />
       </Row>
       {voices.length > 0 && (
         <div className="border-b border-teal-900/10 py-3 dark:border-white/10">
@@ -125,8 +140,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
       <Row label="Subtitles" hint="Show what the voice says">
         <Toggle label="Subtitles" on={s.subtitles} onChange={(v) => update({ subtitles: v })} />
       </Row>
-      <Row label="Calm background tone" hint="A soft drone during sessions">
-        <Toggle label="Calm background tone" on={s.ambient} onChange={(v) => update({ ambient: v })} />
+      <Row label="Background music" hint="Very soft, relaxing music during sessions">
+        <Toggle label="Background music" on={s.ambient} onChange={(v) => update({ ambient: v })} />
       </Row>
       <Row label="Chimes">
         <Toggle label="Chimes" on={s.chimes} onChange={(v) => update({ chimes: v })} />

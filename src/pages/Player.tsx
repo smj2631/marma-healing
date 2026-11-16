@@ -29,7 +29,7 @@ interface Props {
 
 export function Player({ protocol, mode, stepNumber }: Props) {
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const { settings, update } = useSettings();
   const seq = useMemo(() => buildSequence(protocol), [protocol]);
   const totalSteps = protocol.steps.length;
   const factor = tempoFactor(settings.tempo);
@@ -436,6 +436,9 @@ export function Player({ protocol, mode, stepNumber }: Props) {
             />
           </div>
         </div>
+        <button className="icon-btn" aria-label={settings.ambient ? 'Turn background music off' : 'Turn background music on'} aria-pressed={settings.ambient} onClick={() => update({ ambient: !settings.ambient })}>
+          <MusicIcon off={!settings.ambient} />
+        </button>
         <button className="icon-btn" aria-label="Settings" onClick={() => setShowSettings(true)}>
           <GearIcon width={22} height={22} />
         </button>
@@ -638,9 +641,12 @@ function StartScreen({
         <Link to={`/protocols/${protocol.slug}`} className="icon-btn -ml-2" aria-label="Back">
           <CloseIcon />
         </Link>
-        <button className="icon-btn -mr-2" onClick={onSettings} aria-label="Settings">
-          <GearIcon />
-        </button>
+        <div className="-mr-2 flex">
+          <MusicToggle />
+          <button className="icon-btn" onClick={onSettings} aria-label="Settings">
+            <GearIcon />
+          </button>
+        </div>
       </div>
       <div className="flex flex-1 flex-col items-center justify-center text-center">
         <Lotus size={72} className="text-teal-800 dark:text-saffron-300" />
@@ -666,5 +672,25 @@ function StartScreen({
       </div>
       <SettingsSheet open={settingsOpen} onClose={closeSettings} />
     </div>
+  );
+}
+
+function MusicIcon({ off }: { off?: boolean }) {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9 18V5l11-2v13" />
+      <circle cx={6} cy={18} r={3} />
+      <circle cx={17} cy={16} r={3} />
+      {off && <path d="M3 3l18 18" />}
+    </svg>
+  );
+}
+
+function MusicToggle() {
+  const { settings, update } = useSettings();
+  return (
+    <button className="icon-btn" aria-label={settings.ambient ? 'Turn background music off' : 'Turn background music on'} aria-pressed={settings.ambient} onClick={() => update({ ambient: !settings.ambient })}>
+      <MusicIcon off={!settings.ambient} />
+    </button>
   );
 }

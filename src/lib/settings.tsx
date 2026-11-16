@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { load, save } from './storage';
-import { setVoiceURI } from './speech';
+import { setVoiceGender, setVoiceURI, type VoiceGender } from './speech';
 
 export type Tempo = 'slow' | 'normal' | 'quick';
 export type Theme = 'system' | 'light' | 'dark';
@@ -16,7 +16,9 @@ export interface Settings {
   subtitles: boolean;
   /** '' = automatic (best available voice). */
   voiceURI: string;
+  /** Background music. */
   ambient: boolean;
+  voiceGender: VoiceGender;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -30,6 +32,7 @@ export const DEFAULT_SETTINGS: Settings = {
   subtitles: true,
   voiceURI: '',
   ambient: true,
+  voiceGender: 'male',
 };
 
 export const TEMPO_SECONDS: Record<Tempo, number> = { slow: 5, normal: 4, quick: 3 };
@@ -48,6 +51,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     save('settings', settings);
+    setVoiceGender(settings.voiceGender);
     setVoiceURI(settings.voiceURI);
   }, [settings]);
 

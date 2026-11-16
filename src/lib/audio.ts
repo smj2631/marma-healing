@@ -57,52 +57,120 @@ export const completeChime = () => {
   bell(792, 0.7, 3, 0.12);
 };
 
-// ---------- Calm background tone (a soft tanpura-like drone) ----------
-let ambient: { gain: GainNode; nodes: AudioScheduledSourceNode[] } | null = null;
+// ---------- Relaxing background music (generated live, works offline) ----------
+// Slow warm pad chords (D – Bm – G – A) with sparse, soft pentatonic bell notes, through a gentle reverb.
+const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
+const CHORDS = [
+  [50, 57, 62, 66, 69], // D
+  [47, 54, 59, 62, 66], // Bm
+  [43, 50, 55, 59, 62], // G
+  [45, 52, 57, 61, 64], // A
+];
+const MELODY = [62, 64, 66, 69, 71, 74, 76, 78]; // D major pentatonic
+const CHORD_SEC = 9;
+
+let music: { master: GainNode; bus: GainNode; timer: number; nextChord: number; nextNote: number; chord: number } | null = null;
+
+function makeReverb(c: AudioContext) {
+  const len = Math.floor(c.sampleRate * 3.2);
+  const buf = c.createBuffer(2, len, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 2.6;
+  }
+  const conv = c.createConvolver();
+  conv.buffer = buf;
+  return conv;
+}
+
+function padChord(c: AudioContext, out: AudioNode, notes: number[], t: number) {
+  const dur = CHORD_SEC + 4;
+  notes.forEach((n, i) => {
+    for (const [type, det, g] of [
+      ['sine', 0, 0.06],
+      ['triangle', 6, 0.025],
+    ] as const) {
+      const o = c.createOscillator();
+      o.type = type;
+      o.frequency.value = midi(n);
+      o.detune.value = det * (i % 2 ? 1 : -1);
+      const gain = c.createGain();
+      const peak = g * (i === 0 ? 1.2 : 0.8);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(peak, t + 3.5);
+      gain.gain.setValueAtTime(peak, t + dur - 4.5);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(gain).connect(out);
+      o.start(t);
+      o.stop(t + dur + 0.1);
+    }
+  });
+}
+
+function softBell(c: AudioContext, out: AudioNode, n: number, t: number) {
+  const o = c.createOscillator();
+  o.type = 'sine';
+  o.frequency.value = midi(n);
+  const o2 = c.createOscillator();
+  o2.type = 'sine';
+  o2.frequency.value = midi(n) * 2.0;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.05, t + 0.06);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 4);
+  const g2 = c.createGain();
+  g2.gain.value = 0.15;
+  o.connect(g).connect(out);
+  o2.connect(g2).connect(g);
+  o.start(t);
+  o2.start(t);
+  o.stop(t + 4.1);
+  o2.stop(t + 4.1);
+}
 
 export function startAmbient() {
   const c = getCtx();
-  if (!c || ambient) return;
+  if (!c || music) return;
   const master = c.createGain();
   master.gain.setValueAtTime(0.0001, c.currentTime);
-  master.gain.exponentialRampToValueAtTime(0.05, c.currentTime + 4);
+  master.gain.exponentialRampToValueAtTime(0.3, c.currentTime + 6);
   const lp = c.createBiquadFilter();
   lp.type = 'lowpass';
-  lp.frequency.value = 700;
+  lp.frequency.value = 2200;
+  const bus = c.createGain();
+  const reverb = makeReverb(c);
+  const wet = c.createGain();
+  wet.gain.value = 0.6;
+  const dry = c.createGain();
+  dry.gain.value = 0.55;
+  bus.connect(dry).connect(lp);
+  bus.connect(reverb).connect(wet).connect(lp);
   lp.connect(master).connect(c.destination);
-  const nodes: AudioScheduledSourceNode[] = [];
-  // Sa – Pa – Sa (A2, E3, A3) with gentle detune and slow breathing swell.
-  [
-    [110, 0.5, 'sine'],
-    [110.4, 0.25, 'triangle'],
-    [164.8, 0.3, 'sine'],
-    [220, 0.18, 'sine'],
-  ].forEach(([f, g, type], i) => {
-    const o = c.createOscillator();
-    o.type = type as OscillatorType;
-    o.frequency.value = f as number;
-    const og = c.createGain();
-    og.gain.value = g as number;
-    const lfo = c.createOscillator();
-    lfo.frequency.value = 0.07 + i * 0.03;
-    const lg = c.createGain();
-    lg.gain.value = (g as number) * 0.45;
-    lfo.connect(lg).connect(og.gain);
-    o.connect(og).connect(lp);
-    o.start();
-    lfo.start();
-    nodes.push(o, lfo);
-  });
-  ambient = { gain: master, nodes };
+  const m = { master, bus, timer: 0, nextChord: c.currentTime + 0.1, nextNote: c.currentTime + 4, chord: 0 };
+  // Look-ahead scheduler.
+  m.timer = window.setInterval(() => {
+    const now = c.currentTime;
+    while (m.nextChord < now + 2) {
+      padChord(c, bus, CHORDS[m.chord % CHORDS.length], m.nextChord);
+      m.chord++;
+      m.nextChord += CHORD_SEC;
+    }
+    while (m.nextNote < now + 2) {
+      if (Math.random() < 0.55) softBell(c, bus, MELODY[Math.floor(Math.random() * MELODY.length)], m.nextNote);
+      m.nextNote += 2.6 + Math.random() * 2.8;
+    }
+  }, 500);
+  music = m;
 }
 
 export function stopAmbient() {
   const c = getCtx();
-  if (!c || !ambient) return;
-  const a = ambient;
-  ambient = null;
-  a.gain.gain.cancelScheduledValues(c.currentTime);
-  a.gain.gain.setValueAtTime(Math.max(a.gain.gain.value, 0.0001), c.currentTime);
-  a.gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 1.5);
-  setTimeout(() => a.nodes.forEach((n) => n.stop()), 1700);
+  if (!c || !music) return;
+  const m = music;
+  music = null;
+  clearInterval(m.timer);
+  m.master.gain.cancelScheduledValues(c.currentTime);
+  m.master.gain.setValueAtTime(Math.max(m.master.gain.value, 0.0001), c.currentTime);
+  m.master.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 2);
+  setTimeout(() => m.master.disconnect(), 2300);
 }

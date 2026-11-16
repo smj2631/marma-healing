@@ -4,19 +4,35 @@ let chosenURI = '';
 let auto: SpeechSynthesisVoice | null = null;
 const listeners = new Set<() => void>();
 
-/** Higher score = more natural / soothing. Neural "Natural"/"Premium"/"Enhanced" voices sound far better. */
+export type VoiceGender = 'male' | 'female';
+let gender: VoiceGender = 'male';
+
+const MALE = /prabhat|ravi|hemant|rishi|guy|ryan|thomas|christopher|andrew|brian|eric|davis|roger|steffan|william|liam|connor|daniel|aaron|arthur|oliver|alex|fred|tom|evan|nathan|uk english male|\bmale\b/;
+const FEMALE = /neerja|heera|veena|sonia|libby|aria|jenny|ava|samantha|serena|karen|moira|tessa|kate|zira|emma|olivia|susan|hazel|female|natasha|catherine|allison|joanna|kendra|salli/;
+
+/** Higher score = more natural / soothing, matching the chosen gender. */
 function score(v: SpeechSynthesisVoice) {
   const n = v.name.toLowerCase();
   let s = 0;
   if (!v.lang.toLowerCase().startsWith('en')) return -100;
-  if (/natural|neural|premium|enhanced|wavenet/.test(n)) s += 50;
-  if (/neerja|sonia|libby|aria|jenny|ava|samantha|serena|karen|moira|tessa|kate|veena|female|zira|emma|olivia/.test(n)) s += 20;
-  if (/google uk english female/.test(n)) s += 25;
+  if (/natural|neural|premium|enhanced|wavenet/.test(n)) s += 30;
+  const isMale = MALE.test(n) && !/female/.test(n);
+  const isFemale = FEMALE.test(n);
+  if (gender === 'male') s += isMale ? 60 : isFemale ? -40 : 0;
+  else s += isFemale ? 60 : isMale ? -40 : 0;
+  if (/google uk english/.test(n)) s += 8;
   if (v.lang === 'en-IN' || v.lang === 'en-GB') s += 6;
   if (v.localService) s += 2; // works offline
-  if (/novelty|whisper|bad news|bells|boing|bubbles|cellos|jester|organ|trinoids|zarvox|albert|fred|junior|ralph|grandpa|grandma|rocko|shelley|superstar|eddy|reed|sandy|flo/.test(n)) s -= 80;
+  if (/novelty|whisper|bad news|bells|boing|bubbles|cellos|jester|organ|trinoids|zarvox|albert|junior|ralph|grandpa|grandma|rocko|shelley|superstar|eddy|reed|sandy|flo/.test(n)) s -= 120;
   return s;
 }
+
+export function setVoiceGender(g: VoiceGender) {
+  if (g === gender) return;
+  gender = g;
+  refresh();
+}
+export const isMaleVoice = (v: SpeechSynthesisVoice) => MALE.test(v.name.toLowerCase()) && !/female/i.test(v.name);
 
 function refresh() {
   if (!synth) return;
@@ -95,7 +111,8 @@ export function speak(text: string, { rate = 0.85, interrupt = true, onEnd, onSe
       u.lang = v.lang;
     }
     u.rate = rate;
-    u.pitch = 0.95;
+    // Slightly lower pitch reads as softer and calmer.
+    u.pitch = gender === 'male' ? 0.88 : 0.95;
     u.volume = 1;
     let ended = false;
     const after = () => {
