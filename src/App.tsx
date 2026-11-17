@@ -1,5 +1,6 @@
 import { AnimatePresence } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
+
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { Disclaimer } from './components/Disclaimer';
 import { Layout } from './components/Layout';
@@ -10,6 +11,8 @@ import { NotFound } from './pages/NotFound';
 import { ProtocolPage, SessionPage, StepPage } from './pages/ProtocolRoutes';
 import { Protocols } from './pages/Protocols';
 import { SettingsProvider } from './lib/settings';
+
+const Preview3D = lazy(() => import('./proto3d/Preview3D'));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -47,6 +50,7 @@ function Shell() {
         <Route path="/protocols/:slug" element={<ProtocolPage />} />
         <Route path="/protocols/:slug/session" element={<SessionPage />} />
         <Route path="/protocols/:slug/step/:n" element={<StepPage />} />
+        <Route path="/preview/3d" element={<Suspense fallback={null}><Preview3D /></Suspense>} />
         <Route path="*" element={<Layout><NotFound /></Layout>} />
       </Routes>
       {!loading && <Disclaimer />}

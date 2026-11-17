@@ -15,6 +15,7 @@ const ROUTES = [
   'protocols',
   'protocols/eye',
   'protocols/eye/session',
+  'preview/3d',
   ...Array.from({ length: 14 }, (_, i) => `protocols/eye/step/${i + 1}`),
   'protocols/sleep',
   'protocols/emotional-wellness',
@@ -63,7 +64,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,jpg,mp4,m4a,json,woff2,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,mp4,m4a,json,glb,woff2,webmanifest}'],
         globIgnores: ['**/protocols/**/index.html', 'about-marma/index.html', '404.html'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,

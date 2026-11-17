@@ -1,0 +1,26 @@
+import { Link } from 'react-router-dom';
+import { Palming3D } from './Palming3D';
+
+export default function Preview3D() {
+  const debug = new URLSearchParams(location.search).has('debug');
+  return (
+    <div className="flex min-h-dvh flex-col bg-gradient-to-b from-sand-100 to-sand-200 dark:from-night-950 dark:to-teal-950">
+      <header className="px-5 pt-5">
+        <div className="text-xs font-semibold uppercase tracking-widest opacity-60">3D preview · Step 14</div>
+        <h1 className="font-serif text-3xl">Palming</h1>
+        <p className="mt-1 text-sm opacity-75">Heel of the palm over the closed eyes, fingers resting on the forehead. Drag to turn the head.</p>
+      </header>
+      <div className="relative min-h-[440px] flex-1">
+        <div className="absolute inset-0">
+        <Palming3D debug={debug} onReady={() => document.body.setAttribute('data-3d-ready', '1')} />
+        </div>
+      </div>
+      <footer className="px-5 pb-6 text-sm">
+        <Link className="font-semibold text-teal-700 underline dark:text-saffron-300" to="/protocols/eye/step/14">
+          Compare with the current version
+        </Link>
+        <p className="mt-2 text-xs opacity-60">Head: Lee Perry-Smith scan (CC BY 3.0). Hands: WebXR generic hand (MIT).</p>
+      </footer>
+    </div>
+  );
+}
