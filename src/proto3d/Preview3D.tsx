@@ -1,10 +1,14 @@
+import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { Character3D } from './Character3D';
+
+const Studio = lazy(() => import('./studio/Studio'));
 
 export default function Preview3D() {
   const qs = new URLSearchParams(location.search);
   const debug = qs.has('debug');
   const live = qs.has('live');
+  if (qs.has('studio')) return <Suspense fallback={null}><Studio /></Suspense>;
   return (
     <div className="flex min-h-dvh flex-col bg-gradient-to-b from-sand-100 to-sand-200 dark:from-night-950 dark:to-teal-950">
       <header className="px-5 pt-5">

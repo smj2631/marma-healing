@@ -19,7 +19,10 @@ export interface Settings {
   /** Background music. */
   ambient: boolean;
   voiceGender: VoiceGender;
+  /** Realistic 3D clips, or the original illustrations. */
+  animStyle: AnimStyle;
 }
+export type AnimStyle = 'realistic' | 'illustrated';
 
 export const DEFAULT_SETTINGS: Settings = {
   voice: true,
@@ -33,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   voiceURI: '',
   ambient: true,
   voiceGender: 'male',
+  animStyle: 'realistic',
 };
 
 export const TEMPO_SECONDS: Record<Tempo, number> = { slow: 5, normal: 4, quick: 3 };
