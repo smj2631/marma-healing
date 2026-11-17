@@ -74,6 +74,8 @@ export function Character3D({ debug = false, onReady }: CharacterProps) {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enablePan = false;
     controls.enableDamping = true;
+    // Fixed view: the person asked for no movement.
+    controls.enabled = qs.has('orbit');
 
     scene.add(new THREE.HemisphereLight(0xfff6ec, 0x8a6a58, 1.5));
     const key = new THREE.DirectionalLight(0xffffff, 2.4);
@@ -108,7 +110,7 @@ export function Character3D({ debug = false, onReady }: CharacterProps) {
       model = fbx;
       const head = new THREE.MeshStandardMaterial({ map: tex('head_color.jpg'), normalMap: tex('head_normal.jpg', false), roughness: 0.62 });
       const body = new THREE.MeshStandardMaterial({ map: tex('body_color.jpg'), normalMap: tex('body_normal.jpg', false), roughness: 0.7 });
-      const hair = new THREE.MeshStandardMaterial({ map: tex('opacity_color.webp'), transparent: true, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 0.8 });
+      const hair = new THREE.MeshStandardMaterial({ map: tex('opacity_color.webp'), transparent: false, alphaTest: 0.3, alphaToCoverage: true, side: THREE.DoubleSide, roughness: 0.8 });
       const report: string[] = [];
       fbx.traverse((o) => {
         if ((o as THREE.Bone).isBone) bones[o.name] = o as THREE.Bone;
@@ -136,7 +138,7 @@ export function Character3D({ debug = false, onReady }: CharacterProps) {
       const headBone = Object.values(bones).find((b) => /head$/i.test(b.name));
       const hp = headBone ? headBone.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(0, 160, 0);
       controls.target.copy(hp).add(new THREE.Vector3(0, 4, 0));
-      const cam = (qs.get('cam') ?? '35,10,95').split(',').map(Number) as V3;
+      const cam = (qs.get('cam') ?? '14,-10,100').split(',').map(Number) as V3;
       camera.position.copy(hp).add(new THREE.Vector3(...cam));
       setup();
       onReady?.();
@@ -216,13 +218,13 @@ export function Character3D({ debug = false, onReady }: CharacterProps) {
       for (const sd of sides) {
         const s = sd.s;
         // on the eyes: fingers up, slightly inwards and back over the forehead; palm facing the face
-        const Fon = new THREE.Vector3(-0.16 * s, 1, -P('fb', 0.42)).normalize();
+        const Fon = new THREE.Vector3(-0.16 * s, 1, -P('fb', 0.32)).normalize();
         const Non = new THREE.Vector3(0.08 * s, P('nu', 0.4), -1).normalize();
         const Foff = new THREE.Vector3(-0.1 * s, 1, 0.25).normalize();
         const Noff = new THREE.Vector3(0.5 * s, 0.1, -1).normalize();
         const F = Foff.clone().lerp(Fon, rise).normalize();
         const N = Noff.clone().lerp(Non, rise).normalize();
-        const heelOn = sd.eye.clone().add(new THREE.Vector3(0.3 * s, -0.3, P('fz', 1.6)));
+        const heelOn = sd.eye.clone().add(new THREE.Vector3(0.3 * s, -0.3, P('fz', 2.8)));
         const heelOff = sd.eye.clone().add(new THREE.Vector3(9 * s, -42, 14));
         const heel = heelOff.lerp(heelOn, rise);
         const wrist = heel.clone().addScaledVector(F, -P('hf', 2.6)).addScaledVector(N, -P('hn', 1.6));
@@ -237,7 +239,7 @@ export function Character3D({ debug = false, onReady }: CharacterProps) {
         const R = new THREE.Quaternion().setFromRotationMatrix(basis(F, N).multiply(basis(sd.F0, sd.N0).transpose()));
         setWorldQuat(sd.hand, R.multiply(sd.Q0));
         sd.hand.updateMatrixWorld(true);
-        const curl = P('curl', 14);
+        const curl = P('curl', 10);
         const thumb = P('thumb', 20);
         for (const f of sd.fingers) {
           const ang = f.thumb ? thumb * [0.5, 0.3, 0.2][f.k] : curl * [0.5, 1, 0.7][f.k];
@@ -258,7 +260,19 @@ export function Character3D({ debug = false, onReady }: CharacterProps) {
     const t0 = performance.now();
     const fixed = debug ? Number(qs.get('t') ?? 'NaN') : NaN;
     let raf = 0;
+    // Recording hook (debug only): render one frame at a given phase.
+    if (debug && qs.has('rec')) {
+      scene.background = new THREE.Color(qs.get('bg') ?? '#fdf8ee');
+      (window as unknown as Record<string, unknown>).__frame = (t: number) => {
+        if (!model) return false;
+        pose(t);
+        controls.update();
+        renderer.render(scene, camera);
+        return true;
+      };
+    }
     const loop = () => {
+      if (debug && qs.has('rec')) return;
       raf = requestAnimationFrame(loop);
       if (model) pose(Number.isFinite(fixed) ? fixed : (((performance.now() - t0) / 1000) % 12) / 12);
       controls.update();
