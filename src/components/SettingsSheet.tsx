@@ -1,6 +1,6 @@
 import type { VoiceGender } from '../lib/speech';
 import type { ReactNode } from 'react';
-import { useSettings, type AnimStyle, type Tempo, type Theme, TEMPO_SECONDS } from '../lib/settings';
+import { useSettings, type Tempo, type Theme, TEMPO_SECONDS } from '../lib/settings';
 import { speak, speechSupported } from '../lib/speech';
 import { Sheet } from './Sheet';
 
@@ -104,17 +104,6 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
             { v: 'quick', l: 'Quick' },
           ]}
           onChange={(v) => update({ tempo: v })}
-        />
-      </Row>
-      <Row label="Animation" hint="Realistic 3D person, or the original drawings">
-        <Segmented<AnimStyle>
-          label="Animation"
-          value={s.animStyle}
-          options={[
-            { v: 'realistic', l: 'Realistic' },
-            { v: 'illustrated', l: 'Drawings' },
-          ]}
-          onChange={(v) => update({ animStyle: v })}
         />
       </Row>
       <Row label="Subtitles" hint="Show what the voice says">

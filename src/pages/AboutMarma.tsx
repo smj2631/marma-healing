@@ -108,7 +108,6 @@ export function AboutMarma() {
       </aside>
       <p className="text-xs opacity-60">
         Guidance voice generated with Piper text-to-speech using the LibriTTS voice model (CC BY 4.0, speaker 436).
-        Realistic 3D demonstrations use a character from the Microsoft Rocketbox avatar library (MIT licence).
       </p>
     </article>
   );
