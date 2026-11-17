@@ -64,8 +64,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,jpg,mp4,m4a,json,glb,woff2,webmanifest}'],
-        globIgnores: ['**/protocols/**/index.html', 'about-marma/index.html', '404.html'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,mp4,m4a,json,woff2,webmanifest}'],
+        globIgnores: ['**/protocols/**/index.html', 'about-marma/index.html', '404.html', 'models/**', 'preview/**'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
       },

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Palming3D } from './Palming3D';
+import { Character3D } from './Character3D';
 
 export default function Preview3D() {
   const debug = new URLSearchParams(location.search).has('debug');
@@ -12,14 +12,14 @@ export default function Preview3D() {
       </header>
       <div className="relative min-h-[440px] flex-1">
         <div className="absolute inset-0">
-        <Palming3D debug={debug} onReady={() => document.body.setAttribute('data-3d-ready', '1')} />
+        <Character3D debug={debug} onReady={() => document.body.setAttribute('data-3d-ready', '1')} />
         </div>
       </div>
       <footer className="px-5 pb-6 text-sm">
         <Link className="font-semibold text-teal-700 underline dark:text-saffron-300" to="/protocols/eye/step/14">
           Compare with the current version
         </Link>
-        <p className="mt-2 text-xs opacity-60">Head: Lee Perry-Smith scan (CC BY 3.0). Hands: WebXR generic hand (MIT).</p>
+        <p className="mt-2 text-xs opacity-60">Character: Microsoft Rocketbox avatar library (MIT).</p>
       </footer>
     </div>
   );
